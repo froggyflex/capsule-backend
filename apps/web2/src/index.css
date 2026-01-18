@@ -1,0 +1,35 @@
+:root {
+  --bg: #0b0f19;
+  --bg-accent: #111827;
+  --card: rgba(20, 24, 45, 0.75);
+  --card-border: rgba(255, 255, 255, 0.08);
+
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+
+  --url: #818cf8;
+  --textCapsule: #34d399;
+  --file: #fbbf24;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Futuristic abstract background */
+  background:
+    radial-gradient(
+      1200px 600px at 10% -10%,
+      rgba(99, 102, 241, 0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 500px at 90% 20%,
+      rgba(52, 211, 153, 0.12),
+      transparent 55%
+    ),
+    linear-gradient(180deg, var(--bg), var(--bg-accent));
+}
