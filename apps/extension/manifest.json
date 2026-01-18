@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Capsule",
+  "description": "Send current context to Capsule",
+  "version": "0.1.0",
+
+  "action": {
+    "default_popup": "popup.html"
+  },
+
+  "permissions": ["tabs", "scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "all_frames": true
+    }
+  ]
+
+
+ 
+}

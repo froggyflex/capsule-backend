@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        --bg: #0b0f19;
+        --card: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+
+        --primary: #6366f1;
+        --secondary: #10b981;
+        --accent: #f59e0b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 12px;
+        width: 240px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(
+            300px 160px at 20% -10%,
+            rgba(99, 102, 241, 0.18),
+            transparent 60%
+          ),
+          linear-gradient(180deg, var(--bg), #111827);
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .subtitle {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      button {
+        all: unset;
+        cursor: pointer;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        padding: 10px 12px;
+        border-radius: 14px;
+
+        background: var(--card);
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          background 0.12s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      .icon.selection {
+        background: rgba(99, 102, 241, 0.18);
+        color: #c7d2fe;
+      }
+
+      .icon.moment {
+        background: rgba(16, 185, 129, 0.18);
+        color: #6ee7b7;
+      }
+
+      .icon.page {
+        background: rgba(245, 158, 11, 0.18);
+        color: #fde68a;
+      }
+
+      .label {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .label span:first-child {
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .label span:last-child {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      #status {
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--muted);
+        min-height: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div>
+        <div class="title">Capsule</div>
+        <div class="subtitle">
+          Capture now, use anywhere
+        </div>
+      </div>
+
+      <button id="send-selection">
+        <div class="icon selection">✍️</div>
+        <div class="label">
+          <span>Send selection</span>
+          <span>Save highlighted text</span>
+        </div>
+      </button>
+
+      <button id="moment">
+        <div class="icon moment">⏱️</div>
+        <div class="label">
+          <span>Capsule this moment</span>
+          <span>Save video timestamp</span>
+        </div>
+      </button>
+
+      <button id="send-page">
+        <div class="icon page">🔗</div>
+        <div class="label">
+          <span>Send page</span>
+          <span>Save current URL</span>
+        </div>
+      </button>
+
+      <p id="status"></p>
+    </div>
+
+    <script type="module" src="dist/popup.js"></script>
+  </body>
+</html>

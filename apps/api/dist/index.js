@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const fastify_1 = __importDefault(require("fastify"));
+const cors_1 = __importDefault(require("@fastify/cors"));
+const db_1 = require("./db");
+const capsules_1 = require("./routes/capsules");
+const app = (0, fastify_1.default)({ logger: true });
+async function start() {
+    await (0, db_1.connectDB)("mongodb+srv://nikpa_:nikpa_6563@hotelma.jhuhdvp.mongodb.net/contextfriz?retryWrites=true&w=majority&appName=hotelma");
+    // ✅ CORS — explicit and controlled
+    await app.register(cors_1.default, {
+        origin: ["http://localhost:5173"],
+        methods: ["GET", "POST"],
+    });
+    app.register(capsules_1.capsuleRoutes);
+    await app.listen({ port: 3000 });
+}
+start();

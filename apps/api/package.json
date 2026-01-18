@@ -1,0 +1,24 @@
+{
+  "name": "@capsule/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@capsule/contract": "*",
+    "@fastify/cors": "^8.5.0",
+    "fastify": "^4.26.0",
+    "mongoose": "^8.21.0",
+    "open-graph-scraper": "^6.11.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.0"
+  }
+}
