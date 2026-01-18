@@ -11,31 +11,36 @@ async function start() {
    await connectDB(MONGO_URL);
 
   // ✅ CORS — explicit and controlled
-  await app.register(cors, {
-    origin: (origin, cb) => {
-      // allow server-to-server / curl / Postman
-      if (!origin) return cb(null, true);
+ await app.register(cors, {
+  origin: (origin, cb) => {
+    // allow server-to-server, curl, Postman
+    if (!origin) return cb(null, true);
 
-      // allow web app
-      if (origin === "http://localhost:5173") {
-        return cb(null, true);
-      }
-      if (origin === "https://capsule-backend-mo71.onrender.com") {
-        return cb(null, true);
-      }
-      if (origin === "https://www.capsule.app") {
-        return cb(null, true);
-      }
-      // allow chrome extensions
-      if (origin.startsWith("chrome-extension://")) {
-        return cb(null, true);
-      }
+    // local dev
+    if (origin === "http://localhost:5173") {
+      return cb(null, true);
+    }
 
-      // block everything else
-      cb(new Error("Not allowed by CORS"), false);
-    },
-    methods: ["GET", "POST", "OPTIONS", "DELETE"]
-  });
+    // Vercel frontend (ADD THIS)
+    if (origin === "https://capsule-frontend-seven.vercel.app") {
+      return cb(null, true);
+    }
+
+    // custom domain (future-proof)
+    if (origin === "https://capsule.app") {
+      return cb(null, true);
+    }
+
+    // chrome extension
+    if (origin.startsWith("chrome-extension://")) {
+      return cb(null, true);
+    }
+
+    // block everything else
+    cb(new Error("Not allowed by CORS"), false);
+  },
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+});
 
 
   app.register(capsuleRoutes);

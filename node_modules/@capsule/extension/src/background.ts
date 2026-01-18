@@ -1,5 +1,5 @@
 import type { Capsule } from "@capsule/contract";
-import { API_BASE } from "./config";
+import { API_BASE } from "./config.js";
 
 chrome.action.onClicked.addListener(async tab => {
   if (!tab.url) return;
