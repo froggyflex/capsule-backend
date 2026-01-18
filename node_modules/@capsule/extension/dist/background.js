@@ -1,3 +1,4 @@
+import { API_BASE } from "./config";
 chrome.action.onClicked.addListener(async (tab) => {
     if (!tab.url)
         return;
@@ -17,10 +18,9 @@ chrome.action.onClicked.addListener(async (tab) => {
         },
         version: 1
     };
-    await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
+    await fetch(`${API_BASE}/capsules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(capsule)
     });
 });
-export {};

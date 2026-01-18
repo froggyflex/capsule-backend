@@ -1,7 +1,8 @@
+import { API_BASE } from "./config";
 const status = document.getElementById("status");
 async function sendCapsule(capsule) {
     status.textContent = "Sending…";
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
+    const res = await fetch(`${API_BASE}/capsules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(capsule)
@@ -96,4 +97,3 @@ document
         status.textContent = "Failed to send";
     }
 });
-export {};
