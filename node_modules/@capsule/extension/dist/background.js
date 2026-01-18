@@ -17,7 +17,7 @@ chrome.action.onClicked.addListener(async (tab) => {
         },
         version: 1
     };
-    await fetch("http://localhost:3000/capsules", {
+    await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(capsule)

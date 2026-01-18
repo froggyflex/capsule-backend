@@ -1,4 +1,6 @@
 import React from "react";
+import { API_BASE } from "./config";
+
 
 export default function Popup() {
   async function capsuleMoment() {
@@ -20,7 +22,7 @@ export default function Popup() {
       url += url.includes("?") ? `&t=${t}` : `?t=${t}`;
     }
 
-    await fetch("http://localhost:3000/capsules", {
+    await fetch(`${API_BASE}/capsules`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

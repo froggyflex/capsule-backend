@@ -1,11 +1,12 @@
 import type { Capsule } from "@capsule/contract";
+import { API_BASE } from "./config";
 
 const status = document.getElementById("status") as HTMLParagraphElement;
 
 async function sendCapsule(capsule: Omit<Capsule, "_id">) {
   status.textContent = "Sending…";
 
-  const res = await fetch("http://localhost:3000/capsules", {
+  const res = await fetch(`${API_BASE}/capsules`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(capsule)
