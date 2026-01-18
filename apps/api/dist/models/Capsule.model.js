@@ -78,5 +78,11 @@ const CapsuleSchema = new mongoose_1.Schema({
 }, {
     versionKey: false,
 });
+CapsuleSchema.index({
+    "payload.kind": 1,
+    "payload.value": 1,
+    "source.client": 1,
+    createdAt: -1
+});
 exports.CapsuleModel = mongoose_1.default.models.Capsule ||
     mongoose_1.default.model("Capsule", CapsuleSchema);
