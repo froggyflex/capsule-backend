@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 const fastify_1 = __importDefault(require("fastify"));
 const cors_1 = __importDefault(require("@fastify/cors"));
+
 import { connectDB } from "./db";
 import { capsuleRoutes } from "./routes/capsules";
 
