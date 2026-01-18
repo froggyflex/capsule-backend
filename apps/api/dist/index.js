@@ -7,13 +7,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 const fastify_1 = __importDefault(require("fastify"));
 const cors_1 = __importDefault(require("@fastify/cors"));
-const db_1 = require("./db");
-const capsules_1 = require("./routes/capsules");
+import { connectDB } from "./db";
+import { capsuleRoutes } from "./routes/capsules";
 
 const app = (0, fastify_1.default)({ logger: true });
 
 async function start() {
-  await (0, db_1.connectDB)(process.env.MONGO_URI);
+  await (0, connectDB)(process.env.MONGO_URL);
 
   await app.register(cors_1.default, {
     origin: (origin, cb) => {
@@ -29,7 +29,7 @@ async function start() {
     methods: ["GET", "POST", "OPTIONS", "DELETE"]
   });
 
-  app.register(capsules_1.capsuleRoutes);
+  app.register(capsuleRoutes);
 
   await app.listen({
     port: Number(process.env.PORT) || 3000,
