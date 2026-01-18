@@ -22,7 +22,7 @@ async function start() {
             if (origin === "http://localhost:5173") {
                 return cb(null, true);
             }
-            if (origin === "https://capsule.app") {
+            if (origin === "https://capsule-backend-mo71.onrender.com") {
                 return cb(null, true);
             }
             if (origin === "https://www.capsule.app") {
