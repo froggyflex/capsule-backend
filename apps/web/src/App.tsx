@@ -1,6 +1,6 @@
 import CapsuleDetail from "./components/CapsuleDetail";
 import { useEffect, useMemo, useState } from "react";
-import type { Capsule } from "@capsule/contract";
+import type { Capsule } from "./contracts/capsule";
 import { fetchCapsules } from "./api/capsules";
 import CapsuleList from "./components/CapsuleList";
 

@@ -1,5 +1,4 @@
-import type { Capsule } from "@capsule/contract";
-
+import type { Capsule } from "../contracts/capsule";
 const TEXT_PREVIEW_LIMIT = 160;
 
 function isLongText(text: string) {

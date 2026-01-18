@@ -1,4 +1,4 @@
-import type { Capsule } from "@capsule/contract";
+import type { Capsule } from "../contracts/capsule";
  
 function formatTime(ts: number) {
   return new Date(ts).toLocaleString();
@@ -20,7 +20,8 @@ export default function CapsuleDetail({ capsule, onDelete }: { capsule: Capsule,
         boxShadow: "0 26px 70px rgba(0,0,0,0.35)"
       }}
     >
-        {capsule.payload.meta?.previewImage && (
+        {capsule.payload.kind === "url" && 
+         capsule.payload.meta?.previewImage && (
             <div
                 style={{
                 width: "100%",
@@ -43,6 +44,8 @@ export default function CapsuleDetail({ capsule, onDelete }: { capsule: Capsule,
                 />
             </div>
         )}
+    
+    
 
       {/* ---------- HEADER ---------- */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
