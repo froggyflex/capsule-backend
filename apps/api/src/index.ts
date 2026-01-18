@@ -2,12 +2,13 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { connectDB } from "./db";
 import { capsuleRoutes } from "./routes/capsules";
+import { MONGO_URL } from "./config";
 
 const app = Fastify({ logger: true });
 const port = Number(process.env.PORT) || 3000;
 
 async function start() {
-   await connectDB(process.env.MONGO_URL);
+   await connectDB(MONGO_URL);
 
   // ✅ CORS — explicit and controlled
   await app.register(cors, {
