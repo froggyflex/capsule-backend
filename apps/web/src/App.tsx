@@ -41,56 +41,7 @@ function useIsMobile(maxWidthPx = 768) {
   return isMobile;
 }
 
-function classifyPaste(text: string) {
-  try {
-    const url = new URL(text);
-    return { kind: "url" as const, value: url.toString() };
-  } catch {
-    return { kind: "text" as const, value: text };
-  }
-}
-function onPaste(e: ClipboardEvent) {
-  const target = e.target as HTMLElement;
 
-  if (
-    target.tagName === "INPUT" ||
-    target.tagName === "TEXTAREA" ||
-    target.isContentEditable
-  ) {
-    return;
-  }
-
-  const text = e.clipboardData?.getData("text/plain");
-  if (!text) return;
-
-  handlePaste(text);
-}
-
-async function handlePaste(text: string) {
-  let payload;
-
-  try {
-    const url = new URL(text);
-    payload = { kind: "url", value: url.toString() };
-  } catch {
-    payload = { kind: "text", value: text };
-  }
-
-  await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      payload,
-      source: {
-        deviceId: "web",
-        client: "web",
-      },
-    }),
-  });
-
-  await fetchCapsules();  
-  
-}
 
  
 export default function App() {
@@ -98,8 +49,12 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const isMobile = useIsMobile(768);
-
   const isDesktop = useIsDesktop(1024);
+  const [toast, setToast] = useState<{
+    message: string;
+    type?: "success" | "error";
+  }  | null>(null);
+
 
   useEffect(() => {
     function onPaste(e: ClipboardEvent) {
@@ -143,6 +98,64 @@ export default function App() {
     [capsules, selectedId]
   );
 
+function classifyPaste(text: string) {
+  try {
+    const url = new URL(text);
+    return { kind: "url" as const, value: url.toString() };
+  } catch {
+    return { kind: "text" as const, value: text };
+  }
+}
+function onPaste(e: ClipboardEvent) {
+  const target = e.target as HTMLElement;
+
+  if (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.isContentEditable
+  ) {
+    return;
+  }
+
+  const text = e.clipboardData?.getData("text/plain");
+  if (!text) return;
+
+  handlePaste(text);
+}
+
+  let lastPaste = "";
+  let lastTime = 0;
+  async function handlePaste(text: string) {
+    let payload;
+
+    const now = Date.now();
+    if (text === lastPaste && now - lastTime < 2000) return;
+
+    lastPaste = text;
+    lastTime = now;
+
+    try {
+      const url = new URL(text);
+      payload = { kind: "url", value: url.toString() };
+    } catch {
+      payload = { kind: "text", value: text };
+    }
+
+    await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payload,
+        source: {
+          deviceId: "web",
+          client: "web",
+        },
+      }),
+    });
+
+    await fetchCapsules();  
+    showToast("Captured ✓");
+  }
       async function pasteFromClipboard() {
       try {
         const text = await navigator.clipboard.readText();
@@ -172,6 +185,15 @@ export default function App() {
         console.error("Clipboard paste failed", err);
       }
     }
+  
+  function showToast(
+    message: string,
+    type: "success" | "error" = "success",
+    duration = 1500
+  ) {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), duration);
+  }
 
 async function deleteCapsule(id: string) {
    console.log("DELETE CLICKED WITH ID:", id);
@@ -324,6 +346,35 @@ async function deleteCapsule(id: string) {
           ) : null}
         </section>
       </main>
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            padding: "10px 14px",
+            borderRadius: 12,
+            background:
+              toast.type === "error"
+                ? "rgba(239,68,68,0.15)"
+                : "rgba(34,197,94,0.15)",
+            color:
+              toast.type === "error"
+                ? "#fecaca"
+                : "#bbf7d0",
+            border:
+              toast.type === "error"
+                ? "1px solid rgba(239,68,68,0.4)"
+                : "1px solid rgba(34,197,94,0.4)",
+            backdropFilter: "blur(6px)",
+            fontSize: 13,
+            zIndex: 9999,
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
     </div>
   );
 }
