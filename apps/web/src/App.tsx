@@ -41,6 +41,58 @@ function useIsMobile(maxWidthPx = 768) {
   return isMobile;
 }
 
+function classifyPaste(text: string) {
+  try {
+    const url = new URL(text);
+    return { kind: "url" as const, value: url.toString() };
+  } catch {
+    return { kind: "text" as const, value: text };
+  }
+}
+function onPaste(e: ClipboardEvent) {
+  const target = e.target as HTMLElement;
+
+  if (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.isContentEditable
+  ) {
+    return;
+  }
+
+  const text = e.clipboardData?.getData("text/plain");
+  if (!text) return;
+
+  handlePaste(text);
+}
+
+async function handlePaste(text: string) {
+  let payload;
+
+  try {
+    const url = new URL(text);
+    payload = { kind: "url", value: url.toString() };
+  } catch {
+    payload = { kind: "text", value: text };
+  }
+
+  await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      payload,
+      source: {
+        deviceId: "web",
+        client: "web",
+      },
+    }),
+  });
+
+  await fetchCapsules();  
+  
+}
+
+ 
 export default function App() {
   const [capsules, setCapsules] = useState<Capsule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +100,30 @@ export default function App() {
   const isMobile = useIsMobile(768);
 
   const isDesktop = useIsDesktop(1024);
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const target = e.target as HTMLElement;
+
+      
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const text = e.clipboardData?.getData("text/plain");
+      if (!text) return;
+
+      handlePaste(text);
+    }
+
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, []);
+
 
   useEffect(() => {
     fetchCapsules()
@@ -130,7 +206,9 @@ async function deleteCapsule(id: string) {
           gap: 12
         }}
       >
+    
         <div>
+
           <div style={{ fontSize: 20, fontWeight: 700 }}>Capsules</div>
           <div style={{ fontSize: 12, color: "var(--muted)" }}>
             Capture on one device, use on another
