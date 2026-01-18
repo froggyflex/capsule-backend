@@ -4,6 +4,7 @@ import { connectDB } from "./db";
 import { capsuleRoutes } from "./routes/capsules";
 
 const app = Fastify({ logger: true });
+const port = Number(process.env.PORT) || 3000;
 
 async function start() {
    await connectDB(process.env.MONGO_URL);
@@ -18,7 +19,12 @@ async function start() {
       if (origin === "http://localhost:5173") {
         return cb(null, true);
       }
-
+      if (origin === "https://capsule.app") {
+        return cb(null, true);
+      }
+      if (origin === "https://www.capsule.app") {
+        return cb(null, true);
+      }
       // allow chrome extensions
       if (origin.startsWith("chrome-extension://")) {
         return cb(null, true);
@@ -33,7 +39,10 @@ async function start() {
 
   app.register(capsuleRoutes);
 
-  await app.listen({ port: 3000 });
+  await app.listen({ port, host: "0.0.0.0" });
 }
 
 start();
+
+
+
