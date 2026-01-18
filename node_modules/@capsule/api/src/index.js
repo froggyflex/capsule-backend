@@ -6,7 +6,7 @@ import { capsuleRoutes } from "./routes/capsules";
 const app = Fastify({ logger: true });
 
 async function start() {
-   await connectDB("mongodb+srv://nikpa_:nikpa_6563@hotelma.jhuhdvp.mongodb.net/contextfriz?retryWrites=true&w=majority&appName=hotelma");
+   await connectDB(process.env.MONGO_URL);
 
   // ✅ CORS — explicit and controlled
   await app.register(cors, {
