@@ -345,7 +345,6 @@ async function deleteCapsule(id: string) {
             />
           ) : null}
         </section>
-      </main>
       {toast && (
         <div
           style={{
@@ -374,6 +373,8 @@ async function deleteCapsule(id: string) {
           {toast.message}
         </div>
       )}
+      </main>
+
 
     </div>
   );
