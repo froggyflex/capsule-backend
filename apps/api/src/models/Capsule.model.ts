@@ -6,7 +6,7 @@ const CapsuleSchema = new Schema<Capsule>(
     payload: {
       kind: {
         type: String,
-        enum: ["url", "text", "file"],
+        enum: ["url", "text", "file", "image"],
         required: true,
       },
       value: {
