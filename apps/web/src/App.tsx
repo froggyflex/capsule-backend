@@ -57,23 +57,38 @@ export default function App() {
 
 
   useEffect(() => {
-    function onPaste(e: ClipboardEvent) {
-      const target = e.target as HTMLElement;
+  function onPaste(e: ClipboardEvent) {
+    const target = e.target as HTMLElement;
 
-      
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      const text = e.clipboardData?.getData("text/plain");
-      if (!text) return;
-
-      handlePaste(text);
+    // 🚫 don't hijack paste inside inputs
+    if (
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable
+    ) {
+      return;
     }
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // 1️⃣ Try image first
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          handleImagePaste(file);
+          return;
+        }
+      }
+    }
+
+  // 2️⃣ Fallback to text
+  const text = e.clipboardData?.getData("text/plain");
+  if (text) {
+    handlePaste(text);
+  }
+}
 
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
@@ -97,6 +112,39 @@ export default function App() {
     () => capsules.find(c => c._id === selectedId) ?? null,
     [capsules, selectedId]
   );
+
+function handleImagePaste(file: File) {
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    const base64 = reader.result as string;
+
+    await fetch(`${import.meta.env.VITE_API_URL}/capsules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payload: {
+          kind: "image",
+          value: base64,
+          meta: {
+            mimeType: file.type,
+            name: "clipboard-image.png",
+            size: file.size,
+          },
+        },
+        source: {
+          deviceId: "web",
+          client: "web",
+        },
+      }),
+    });
+
+    await fetchCapsules();
+    showToast("Image captured ✓");
+  };
+
+  reader.readAsDataURL(file);
+}
 
 function classifyPaste(text: string) {
   try {

@@ -5,7 +5,7 @@ import { fetchUrlMetadata } from "../utils/fetchUrlMetadata";
 
 const createCapsuleSchema = z.object({
   payload: z.object({
-    kind: z.enum(["url", "text", "file"]),
+    kind: z.enum(["url", "text", "file", "image"]),
     value: z.any(),
     meta: z
       .object({

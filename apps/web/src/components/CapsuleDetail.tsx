@@ -63,6 +63,18 @@ export default function CapsuleDetail({ capsule, onDelete }: { capsule: Capsule,
 
       {/* ---------- CONTENT ---------- */}
       <div style={{ marginTop: 14 }}>
+
+        {/* IMAGE CAPSULE */}
+        {capsule.payload.kind === "image" && (
+          <img
+            src={capsule.payload.value}
+            style={{
+              maxWidth: "100%",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          />
+        )}
         {/* URL CAPSULE */}
         {kind === "url" && typeof value === "string" && (
           <>

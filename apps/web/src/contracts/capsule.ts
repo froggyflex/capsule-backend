@@ -21,7 +21,17 @@ export type CapsulePayload =
         name: string;
         size: number;
       };
-    };
+    }
+  |
+   {
+      kind: "image";
+      value: string; // base64
+      meta?: {
+        mimeType?: string;
+        name?: string;
+        size?: number;
+      }
+    }
 
 export type CapsuleSource = {
   deviceId: string;
