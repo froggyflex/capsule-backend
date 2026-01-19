@@ -6,7 +6,7 @@ const Capsule_model_1 = require("../models/Capsule.model");
 const fetchUrlMetadata_1 = require("../utils/fetchUrlMetadata");
 const createCapsuleSchema = zod_1.z.object({
     payload: zod_1.z.object({
-        kind: zod_1.z.enum(["url", "text", "file"]),
+        kind: z.enum(["url", "text", "file", "image"]),
         value: zod_1.z.any(),
         meta: zod_1.z
             .object({
