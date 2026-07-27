@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createWorker } from "tesseract.js";
+import { createWorker, PSM } from "tesseract.js";
 import { delayRowsToTsv, parseDelayOcrText, type DelayRow } from "../delayExtraction";
 
 type Status = "idle" | "reading" | "ready" | "error";
@@ -22,6 +22,41 @@ function CopyIcon() {
 
 function emptyRows(): DelayRow[] {
   return [];
+}
+
+async function preprocessForOcr(file: File) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.max(2, Math.min(4, 1800 / bitmap.width));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("Canvas is unavailable");
+
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  const image = context.getImageData(0, 0, canvas.width, canvas.height);
+  for (let offset = 0; offset < image.data.length; offset += 4) {
+    const red = image.data[offset];
+    const green = image.data[offset + 1];
+    const blue = image.data[offset + 2];
+    const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
+    const isDelayRed = red > 120 && red - green > 45 && red - blue > 45;
+    const isDarkNeutral = Math.max(red, green, blue) - Math.min(red, green, blue) < 35 && luminance < 165;
+    const value = isDelayRed || isDarkNeutral ? 0 : 255;
+    image.data[offset] = value;
+    image.data[offset + 1] = value;
+    image.data[offset + 2] = value;
+    image.data[offset + 3] = 255;
+  }
+  context.putImageData(image, 0, 0);
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Image preprocessing failed")), "image/png");
+  });
 }
 
 export default function DelayExtractorTool() {
@@ -50,13 +85,19 @@ export default function DelayExtractorTool() {
     setMessage("Preparing OCR…");
 
     try {
+      const preparedImage = await preprocessForOcr(file);
       const worker = await createWorker("eng", 1, {
         logger: (event) => {
           if (typeof event.progress === "number") setProgress(Math.round(event.progress * 100));
           if (event.status) setMessage(event.status.replaceAll("_", " "));
         },
       });
-      const result = await worker.recognize(file);
+      await worker.setParameters({
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+        tessedit_char_whitelist: "LS0123456789 ",
+        preserve_interword_spaces: "1",
+      });
+      const result = await worker.recognize(preparedImage);
       await worker.terminate();
       const extracted = parseDelayOcrText(result.data.text);
       setRows(extracted);

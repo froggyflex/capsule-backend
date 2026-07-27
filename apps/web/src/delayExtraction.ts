@@ -21,16 +21,20 @@ function normalizedMinutes(value: string) {
 
 export function parseDelayOcrText(text: string): DelayRow[] {
   const rows: DelayRow[] = [];
-  for (const rawLine of text.split(/\r?\n/)) {
-    const cleaned = rawLine
-      .replace(/[—–]/g, "-")
-      .replace(/\s+/g, " ")
-      .trim();
-    const flightMatch = cleaned.match(/\bL[S5]\s*[-:]?\s*([0-9OIl|]{2,5})\b/i);
-    if (!flightMatch) continue;
+  const cleaned = text
+    .replace(/[—–]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  const flightPattern = /\b(?:L[S5]|I[S5]|1[S5])\s*[-:]?\s*([0-9OIl|]{2,5})\b/gi;
+  const matches = Array.from(cleaned.matchAll(flightPattern));
 
+  for (let matchIndex = 0; matchIndex < matches.length; matchIndex += 1) {
+    const flightMatch = matches[matchIndex];
+    const nextMatch = matches[matchIndex + 1];
     const flightNumber = flightMatch[1].replace(/[Oo]/g, "0").replace(/[Il|]/g, "1");
-    const afterFlight = cleaned.slice((flightMatch.index ?? 0) + flightMatch[0].length);
+    const segmentStart = (flightMatch.index ?? 0) + flightMatch[0].length;
+    const segmentEnd = nextMatch?.index ?? cleaned.length;
+    const afterFlight = cleaned.slice(segmentStart, segmentEnd);
     const numericTokens = afterFlight
       .match(/[0-9OIl|]{1,4}/g)
       ?.map((token) => token.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1"))
