@@ -246,10 +246,227 @@ textarea:focus-visible {
 }
 
 .flight-workspace,
+.delay-workspace,
 .capsules-workspace {
   width: min(1480px, 100%);
   margin: 0 auto;
   padding: 42px clamp(24px, 4vw, 58px) 64px;
+}
+
+.delay-layout {
+  display: grid;
+  grid-template-columns: minmax(310px, 0.82fr) minmax(610px, 1.4fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.drop-zone {
+  position: relative;
+  min-height: 360px;
+  padding: 18px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(45deg, #f6f7f9 25%, transparent 25%),
+    linear-gradient(-45deg, #f6f7f9 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f6f7f9 75%),
+    linear-gradient(-45deg, transparent 75%, #f6f7f9 75%),
+    #fafbfc;
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.drop-zone img {
+  display: block;
+  max-width: 100%;
+  max-height: 410px;
+  object-fit: contain;
+  border: 1px solid #dfe3e8;
+  box-shadow: 0 10px 30px rgba(31, 42, 61, 0.09);
+}
+
+.drop-placeholder {
+  min-height: 250px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.drop-placeholder > span {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #b8c0cb;
+  border-radius: 14px;
+  color: #8a94a3;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.drop-placeholder svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.drop-placeholder strong {
+  color: #4d586b;
+  font-size: 13px;
+}
+
+.drop-placeholder small {
+  margin-top: 6px;
+  color: #929baa;
+  font-size: 10.5px;
+}
+
+.ocr-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  color: #fff;
+  background: rgba(17, 24, 39, 0.82);
+  backdrop-filter: blur(5px);
+}
+
+.ocr-overlay strong {
+  font-size: 14px;
+}
+
+.ocr-overlay > span {
+  margin-top: 5px;
+  color: #b9c1ce;
+  font-size: 10.5px;
+  text-transform: capitalize;
+}
+
+.ocr-overlay > div {
+  width: 180px;
+  height: 3px;
+  margin-top: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.ocr-overlay i {
+  display: block;
+  height: 100%;
+  background: #e3434e;
+  transition: width 200ms ease;
+}
+
+.ocr-status {
+  min-height: 48px;
+  padding: 11px 16px;
+  border-top: 1px solid #edf0f3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #7f8999;
+  font-size: 10.5px;
+  text-transform: capitalize;
+}
+
+.ocr-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #aab2be;
+}
+
+.ocr-status.ready {
+  color: #267a5a;
+}
+
+.ocr-status.ready i {
+  background: #36b37e;
+}
+
+.ocr-status.error {
+  color: #b33b45;
+}
+
+.ocr-status.error i {
+  background: #e3434e;
+}
+
+.ocr-status small {
+  margin-left: auto;
+  max-width: 150px;
+  overflow: hidden;
+  color: #a0a8b5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: none;
+}
+
+.delay-sheet-wrap {
+  min-height: 360px;
+  padding: 24px;
+  overflow: auto;
+  background: #f8f9fb;
+}
+
+.delay-table {
+  width: 100%;
+  min-width: 620px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  color: #111;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  box-shadow: 0 12px 32px rgba(31, 42, 61, 0.07);
+}
+
+.delay-table th {
+  height: 34px;
+  border: 1px solid #2e342d;
+  background: #fffed8;
+  text-align: center;
+}
+
+.delay-table thead tr:nth-child(2) th {
+  height: 30px;
+  background: #f8fff2;
+  font-weight: 400;
+}
+
+.delay-table td {
+  height: 31px;
+  padding: 0;
+  border-left: 1px solid #2e342d;
+  border-right: 1px solid #2e342d;
+  border-bottom: 1px dotted #2e342d;
+  background: #ffc400;
+}
+
+.delay-table input {
+  width: 100%;
+  height: 30px;
+  padding: 4px 6px;
+  border: 0;
+  outline: 0;
+  color: #111;
+  background: transparent;
+  text-align: center;
+  font-size: 12px;
+}
+
+.delay-table input:focus {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 2px #b32731;
+}
+
+.delay-empty {
+  min-height: 310px;
 }
 
 .flight-hero {
@@ -673,6 +890,10 @@ textarea:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .delay-layout {
+    grid-template-columns: 1fr;
+  }
+
   .input-card textarea {
     height: 280px;
   }
@@ -728,6 +949,7 @@ textarea:focus-visible {
   }
 
   .flight-workspace,
+  .delay-workspace,
   .capsules-workspace {
     padding: 30px 18px 50px;
   }

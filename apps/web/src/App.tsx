@@ -1,9 +1,10 @@
 import { useState } from "react";
 import "./App.css";
 import CapsulesTool from "./components/CapsulesTool";
+import DelayExtractorTool from "./components/DelayExtractorTool";
 import FlightOperationsTool from "./components/FlightOperationsTool";
 
-type ToolId = "capsules" | "flight-operations";
+type ToolId = "capsules" | "flight-operations" | "delay-extractor";
 
 function LogoMark() {
   return (
@@ -31,6 +32,14 @@ function PlaneIcon() {
   );
 }
 
+function ScanIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 4H4v4m12-4h4v4M8 20H4v-4m12 4h4v-4M7 12h10M9 9h6m-6 6h6" />
+    </svg>
+  );
+}
+
 const tools: Array<{
   id: ToolId;
   label: string;
@@ -48,6 +57,12 @@ const tools: Array<{
     label: "Flight operations",
     description: "Build the daily sheet",
     icon: PlaneIcon,
+  },
+  {
+    id: "delay-extractor",
+    label: "Delay extractor",
+    description: "Screenshot to table",
+    icon: ScanIcon,
   },
 ];
 
@@ -105,7 +120,9 @@ export default function App() {
           <div className="local-badge"><span /> Local workspace</div>
         </header>
 
-        {activeTool === "capsules" ? <CapsulesTool /> : <FlightOperationsTool />}
+        {activeTool === "capsules" && <CapsulesTool />}
+        {activeTool === "flight-operations" && <FlightOperationsTool />}
+        {activeTool === "delay-extractor" && <DelayExtractorTool />}
       </div>
     </div>
   );
