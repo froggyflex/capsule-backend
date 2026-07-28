@@ -128,11 +128,12 @@ export function addMinutes(time: string, minutes: number) {
   return parsed === null ? "" : minutesToTime(parsed + minutes);
 }
 
-export function scheduleToTsv(rows: ScheduledFlight[]) {
+export function scheduleToTsv(rows: ScheduledFlight[], pendingFlights: ScheduleFlight[] = []) {
   return [
-    ["Flight", "Arrival", "Departure", "Gate coverage", "Departure prep", "Employee", "Position", "Shift"].join("\t"),
+    ["Flight", "Status", "Arrival", "Departure", "Gate coverage", "Departure prep", "Employee", "Position", "Shift"].join("\t"),
     ...rows.map((row) => [
       row.flightNumber,
+      row.employee ? "Scheduled" : "Unassigned",
       row.arrival,
       row.departure,
       `${minutesToTime(row.coverageStart)}-${minutesToTime(row.coverageEnd)}`,
@@ -140,6 +141,17 @@ export function scheduleToTsv(rows: ScheduledFlight[]) {
       row.employee ?? "UNASSIGNED",
       row.position ?? "",
       row.shiftLabel ?? "",
+    ].join("\t")),
+    ...pendingFlights.map((flight) => [
+      flight.flightNumber,
+      "Awaiting time",
+      flight.arrival,
+      flight.departure,
+      "",
+      "",
+      "",
+      "",
+      "",
     ].join("\t")),
   ].join("\n");
 }

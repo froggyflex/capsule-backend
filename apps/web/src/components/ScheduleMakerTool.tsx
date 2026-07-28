@@ -52,6 +52,8 @@ export default function ScheduleMakerTool() {
     [staff, flights, arrivalLead, departureLead],
   );
   const validFlightCount = flights.filter((flight) => flight.arrival && flight.departure).length;
+  const pendingFlights = flights.filter((flight) => !flight.arrival || !flight.departure);
+  const isPartial = pendingFlights.length > 0;
   const unassignedCount = schedule.filter((row) => !row.employee).length;
 
   const updateStaff = (id: string, field: keyof StaffShift, value: string) => {
@@ -77,7 +79,7 @@ export default function ScheduleMakerTool() {
   };
 
   const copySchedule = async () => {
-    await navigator.clipboard.writeText(scheduleToTsv(schedule));
+    await navigator.clipboard.writeText(scheduleToTsv(schedule, pendingFlights));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   };
@@ -92,6 +94,7 @@ export default function ScheduleMakerTool() {
         </div>
         <div className="schedule-summary">
           <span><strong>{schedule.length}</strong> planned</span>
+          <span className={isPartial ? "is-pending" : ""}><strong>{pendingFlights.length}</strong> pending</span>
           <span className={unassignedCount ? "has-warning" : ""}><strong>{unassignedCount}</strong> unassigned</span>
         </div>
       </section>
@@ -179,17 +182,22 @@ export default function ScheduleMakerTool() {
         <div className="panel-heading">
           <div>
             <span className="step-number">03</span>
-            <div>
-              <h3>Recommended assignments</h3>
-              <p>CH is preferred, then SS and DM. No employee is double-booked or sent beyond their shift.</p>
+              <div>
+                <h3>Recommended assignments</h3>
+                <p>{isPartial ? "Provisional schedule — available flights are assigned while missing times remain pending." : "Complete schedule — every flight has a usable time."}</p>
+              </div>
             </div>
-          </div>
-          <button className="primary-button" disabled={!schedule.length} onClick={() => void copySchedule()}>
+          <div className="schedule-actions">
+            <span className={`program-state ${isPartial ? "partial" : "complete"}`}>
+              <i /> {isPartial ? "Partial program" : "Complete program"}
+            </span>
+            <button className="primary-button" disabled={!schedule.length && !pendingFlights.length} onClick={() => void copySchedule()}>
             <CopyIcon /> {copied ? "Copied" : "Copy schedule"}
-          </button>
+            </button>
+          </div>
         </div>
 
-        {schedule.length ? (
+        {schedule.length || pendingFlights.length ? (
           <div className="schedule-table-wrap">
             <table className="schedule-table">
               <thead>
@@ -223,6 +231,17 @@ export default function ScheduleMakerTool() {
                     <td>{row.shiftLabel ?? "—"}</td>
                   </tr>
                 ))}
+                {pendingFlights.map((flight) => (
+                  <tr key={flight.id} className="pending-row">
+                    <td><strong>{flight.flightNumber || "Unnamed flight"}</strong></td>
+                    <td>{flight.arrival || "—"}</td>
+                    <td>{flight.departure || "—"}</td>
+                    <td colSpan={2}><span className="pending-chip">Awaiting arrival time</span></td>
+                    <td>Not scheduled yet</td>
+                    <td>—</td>
+                    <td>—</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -234,8 +253,12 @@ export default function ScheduleMakerTool() {
           </div>
         )}
         <div className="schedule-note">
-          <strong>Coverage rule</strong>
-          <span>An agent is reserved from {arrivalLead} min before STA until STD; departure preparation begins {departureLead} min before STD. Review operational requirements before publishing.</span>
+          <strong>{isPartial ? "Provisional program" : "Coverage rule"}</strong>
+          <span>
+            {isPartial
+              ? `${pendingFlights.length} flight${pendingFlights.length === 1 ? " is" : "s are"} waiting for time information. Current assignments may change when those times are added.`
+              : `An agent is reserved from ${arrivalLead} min before STA until STD; departure preparation begins ${departureLead} min before STD.`}
+          </span>
         </div>
       </section>
     </main>

@@ -281,6 +281,16 @@ textarea:focus-visible {
   background: #fffaf3;
 }
 
+.schedule-summary .is-pending {
+  border-color: #d8ddec;
+  color: #5b6785;
+  background: #f7f8fc;
+}
+
+.schedule-summary .is-pending strong {
+  color: #465575;
+}
+
 .schedule-summary .has-warning strong {
   color: #a15c18;
 }
@@ -422,6 +432,41 @@ textarea:focus-visible {
   margin-top: 22px;
 }
 
+.schedule-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.program-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #267a5a;
+  background: #ebf8f2;
+  font-size: 9.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.program-state i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #36b37e;
+}
+
+.program-state.partial {
+  color: #93601d;
+  background: #fff5e7;
+}
+
+.program-state.partial i {
+  background: #e5a33e;
+}
+
 .schedule-table {
   min-width: 940px;
 }
@@ -469,8 +514,26 @@ textarea:focus-visible {
   background: #fff0f1;
 }
 
+.pending-chip {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #586683;
+  background: #eef1f7;
+  font-size: 10px;
+  font-weight: 650;
+}
+
 .unassigned-row {
   background: #fffafa;
+}
+
+.pending-row {
+  background: #fafbfe;
+}
+
+.pending-row td {
+  color: #8a93a3;
 }
 
 .schedule-empty {
@@ -1214,6 +1277,20 @@ textarea:focus-visible {
   .download-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .schedule-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .schedule-actions .program-state {
+    align-self: flex-start;
+  }
+
+  .schedule-actions .primary-button {
+    justify-content: center;
   }
 
   .panel-heading .text-button {
