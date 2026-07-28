@@ -3,8 +3,9 @@ import "./App.css";
 import CapsulesTool from "./components/CapsulesTool";
 import DelayExtractorTool from "./components/DelayExtractorTool";
 import FlightOperationsTool from "./components/FlightOperationsTool";
+import ScheduleMakerTool from "./components/ScheduleMakerTool";
 
-type ToolId = "capsules" | "flight-operations" | "delay-extractor";
+type ToolId = "capsules" | "flight-operations" | "delay-extractor" | "schedule-maker";
 
 function LogoMark() {
   return (
@@ -40,6 +41,14 @@ function ScanIcon() {
   );
 }
 
+function ScheduleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 4h14v16H5zM8 2v4m8-4v4M5 9h14M8 13h3m2 0h3m-8 3h3" />
+    </svg>
+  );
+}
+
 const tools: Array<{
   id: ToolId;
   label: string;
@@ -63,6 +72,12 @@ const tools: Array<{
     label: "Delay extractor",
     description: "Screenshot to table",
     icon: ScanIcon,
+  },
+  {
+    id: "schedule-maker",
+    label: "Schedule maker",
+    description: "Match shifts to flights",
+    icon: ScheduleIcon,
   },
 ];
 
@@ -123,6 +138,7 @@ export default function App() {
         {activeTool === "capsules" && <CapsulesTool />}
         {activeTool === "flight-operations" && <FlightOperationsTool />}
         {activeTool === "delay-extractor" && <DelayExtractorTool />}
+        {activeTool === "schedule-maker" && <ScheduleMakerTool />}
       </div>
     </div>
   );

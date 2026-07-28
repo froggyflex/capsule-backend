@@ -247,10 +247,249 @@ textarea:focus-visible {
 
 .flight-workspace,
 .delay-workspace,
+.schedule-workspace,
 .capsules-workspace {
   width: min(1480px, 100%);
   margin: 0 auto;
   padding: 42px clamp(24px, 4vw, 58px) 64px;
+}
+
+.schedule-summary {
+  display: flex;
+  gap: 8px;
+}
+
+.schedule-summary span {
+  min-width: 92px;
+  padding: 11px 14px;
+  border: 1px solid #e1e5ea;
+  border-radius: 10px;
+  color: #7e8796;
+  background: #fff;
+  font-size: 10.5px;
+}
+
+.schedule-summary strong {
+  margin-right: 3px;
+  color: #263044;
+  font-size: 16px;
+}
+
+.schedule-summary .has-warning {
+  border-color: #f2d4b1;
+  color: #a15c18;
+  background: #fffaf3;
+}
+
+.schedule-summary .has-warning strong {
+  color: #a15c18;
+}
+
+.schedule-setup {
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.schedule-input-panel {
+  min-width: 0;
+}
+
+.editable-table-wrap,
+.schedule-table-wrap {
+  overflow: auto;
+}
+
+.editable-table,
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.editable-table th,
+.schedule-table th {
+  padding: 9px 10px;
+  border-bottom: 1px solid #e6e9ed;
+  color: #768093;
+  background: #fafbfc;
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.055em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.editable-table td {
+  padding: 0;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.editable-table input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 7px 10px;
+  border: 0;
+  outline: 0;
+  color: #354052;
+  background: transparent;
+  font-size: 11px;
+}
+
+.editable-table input:focus {
+  background: #fff7f7;
+  box-shadow: inset 0 -2px #e3434e;
+}
+
+.staff-table th:nth-child(2),
+.staff-table td:nth-child(2) {
+  width: 72px;
+}
+
+.staff-table th:nth-child(3),
+.staff-table td:nth-child(3) {
+  width: 205px;
+}
+
+.editable-table th:last-child,
+.editable-table td:last-child {
+  width: 36px;
+}
+
+.time-pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.time-pair span {
+  color: #adb4bf;
+}
+
+.row-remove {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  color: #a1a9b5;
+  background: transparent;
+  cursor: pointer;
+}
+
+.row-remove:hover {
+  color: #d43843;
+  background: #fff0f1;
+}
+
+.planner-rules {
+  padding: 12px 15px;
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid #e8ebef;
+  background: #fafbfc;
+}
+
+.planner-rules label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #657084;
+  font-size: 10px;
+}
+
+.planner-rules label span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.planner-rules input {
+  width: 46px;
+  height: 28px;
+  padding: 4px;
+  border: 1px solid #dfe3e8;
+  border-radius: 6px;
+  background: #fff;
+  color: #303a4d;
+  text-align: center;
+}
+
+.schedule-output {
+  margin-top: 22px;
+}
+
+.schedule-table {
+  min-width: 940px;
+}
+
+.schedule-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #edf0f3;
+  color: #4b5669;
+  white-space: nowrap;
+}
+
+.schedule-table tbody tr:hover {
+  background: #fbfcfd;
+}
+
+.schedule-table td strong {
+  color: #202a3c;
+}
+
+.employee-chip,
+.unassigned-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.employee-chip {
+  color: #267a5a;
+  background: #ebf8f2;
+}
+
+.employee-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #36b37e;
+}
+
+.unassigned-chip {
+  color: #b33b45;
+  background: #fff0f1;
+}
+
+.unassigned-row {
+  background: #fffafa;
+}
+
+.schedule-empty {
+  min-height: 230px;
+}
+
+.schedule-note {
+  padding: 13px 17px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #7d8797;
+  background: #fafbfc;
+  font-size: 10.5px;
+}
+
+.schedule-note strong {
+  color: #485367;
+  white-space: nowrap;
 }
 
 .delay-layout {
@@ -894,6 +1133,10 @@ textarea:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .schedule-setup {
+    grid-template-columns: 1fr;
+  }
+
   .input-card textarea {
     height: 280px;
   }
@@ -950,12 +1193,17 @@ textarea:focus-visible {
 
   .flight-workspace,
   .delay-workspace,
+  .schedule-workspace,
   .capsules-workspace {
     padding: 30px 18px 50px;
   }
 
   .flight-hero {
     align-items: flex-start;
+  }
+
+  .schedule-summary {
+    display: none;
   }
 
   .hero-stat {
@@ -975,6 +1223,12 @@ textarea:focus-visible {
   .download-row .primary-button {
     width: 100%;
     justify-content: center;
+  }
+
+  .planner-rules,
+  .schedule-note {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .capsule-grid {
