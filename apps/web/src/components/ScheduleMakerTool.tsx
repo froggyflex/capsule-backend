@@ -3,58 +3,87 @@ import {
   addMinutes,
   buildSchedule,
   minutesToTime,
+  parseFlightsText,
+  parseStaffText,
   scheduleToTsv,
   type ScheduleFlight,
   type StaffShift,
 } from "../scheduleMaker";
 
-const initialStaff: StaffShift[] = [
-  { id: "staff-1", employee: "Charitini Mina", position: "DM", start: "08:00", end: "16:00" },
-  { id: "staff-2", employee: "Andreas Tallaros", position: "SS", start: "18:00", end: "02:00" },
-  { id: "staff-3", employee: "Eleni Kyragianni", position: "CH", start: "18:00", end: "02:00" },
-  { id: "staff-4", employee: "Maria Stelletos", position: "CH", start: "16:30", end: "00:30" },
-  { id: "staff-5", employee: "Eleni Petra", position: "CH", start: "08:00", end: "16:00" },
-  { id: "staff-6", employee: "Christos Mantri", position: "CH", start: "10:00", end: "14:00" },
-  { id: "staff-7", employee: "Christos Mantri", position: "CH", start: "21:00", end: "01:00" },
-];
+const initialStaffText = `Employee\t\tPosition\tShift
+Charitini Mina\t\tDM\t08:00-16:00
+Andreas Tallaros\t\tSS\t18:00-02:00
+Eleni Kyragianni\t\tCH\t08:00-16:00
+Maria Stelletos\t\tCH\t16:30-00:30
+Panagiotis Plaggeti\t\tCH\t10:30-13:30
+Panagiotis Plaggeti\t\tCH\t20:00-01:00
+Fani Akranidou\t\tCH\t14:00-22:00
+Eleni Petra\t\tCH\t14:00-22:00
+Christos Mantrri\t\tCH\t18:00-02:00`;
 
-const initialFlights: ScheduleFlight[] = ["LS1512", "LS566", "LS1848", "LS446", "LS838"].map((flightNumber, index) => ({
-  id: `flight-${index + 1}`,
-  flightNumber,
-  arrival: "",
-  departure: "",
-}));
+const initialFlightsText = `FLT N\tDEST
+LS450\tLBA
+LS1630\tSTN
+LS814\tMAN
+LS3142\tLGW
+LS1848\tBRS
+LS1256\tBHX
+LS3854\tLTN`;
 
 function CopyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M8 8h11v11H8zM5 15H4V4h11v1" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 15H4V4h11v1" /></svg>;
 }
 
 function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
+}
+
+function PasteIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h6M9 3h6v4H9zM7 5H5v16h14V5h-2" /></svg>;
 }
 
 export default function ScheduleMakerTool() {
-  const [staff, setStaff] = useState(initialStaff);
-  const [flights, setFlights] = useState(initialFlights);
+  const [staff, setStaff] = useState<StaffShift[]>(() => parseStaffText(initialStaffText));
+  const [flights, setFlights] = useState<ScheduleFlight[]>(() => parseFlightsText(initialFlightsText));
+  const [staffPaste, setStaffPaste] = useState("");
+  const [flightPaste, setFlightPaste] = useState("");
   const [arrivalLead, setArrivalLead] = useState(5);
+  const [arrivalService, setArrivalService] = useState(15);
   const [departureLead, setDepartureLead] = useState(20);
   const [copied, setCopied] = useState(false);
+
   const schedule = useMemo(
-    () => buildSchedule(staff, flights, arrivalLead, departureLead),
-    [staff, flights, arrivalLead, departureLead],
+    () => buildSchedule(staff, flights, arrivalLead, arrivalService, departureLead),
+    [staff, flights, arrivalLead, arrivalService, departureLead],
   );
-  const validFlightCount = flights.filter((flight) => flight.arrival && flight.departure).length;
   const pendingFlights = flights.filter((flight) => !flight.arrival || !flight.departure);
   const isPartial = pendingFlights.length > 0;
-  const unassignedCount = schedule.filter((row) => !row.employee).length;
+  const uncoveredDuties = schedule.reduce(
+    (count, row) => count + Number(!row.arrivalDuty.employee) + Number(!row.departureDuty.employee),
+    0,
+  );
+
+  const applyStaffText = (text: string) => {
+    const parsed = parseStaffText(text);
+    if (parsed.length) {
+      setStaff(parsed);
+      setStaffPaste("");
+    }
+  };
+
+  const applyFlightText = (text: string) => {
+    const parsed = parseFlightsText(text);
+    if (parsed.length) {
+      setFlights(parsed);
+      setFlightPaste("");
+    }
+  };
+
+  const pasteFromClipboard = async (kind: "staff" | "flights") => {
+    const text = await navigator.clipboard.readText();
+    if (kind === "staff") applyStaffText(text);
+    else applyFlightText(text);
+  };
 
   const updateStaff = (id: string, field: keyof StaffShift, value: string) => {
     setStaff((current) => current.map((row) => row.id === id ? { ...row, [field]: value } : row));
@@ -64,18 +93,11 @@ export default function ScheduleMakerTool() {
     setFlights((current) => current.map((row) => {
       if (row.id !== id) return row;
       if (field === "arrival") {
-        const shouldSetDeparture = !row.departure || row.departure === addMinutes(row.arrival, 60);
-        return { ...row, arrival: value, departure: shouldSetDeparture ? addMinutes(value, 60) : row.departure };
+        const useAutomaticDeparture = !row.departure || row.departure === addMinutes(row.arrival, 60);
+        return { ...row, arrival: value, departure: useAutomaticDeparture ? addMinutes(value, 60) : row.departure };
       }
       return { ...row, [field]: value };
     }));
-  };
-
-  const addFlight = () => {
-    setFlights((current) => [
-      ...current,
-      { id: `flight-${Date.now()}`, flightNumber: "", arrival: "", departure: "" },
-    ]);
   };
 
   const copySchedule = async () => {
@@ -89,90 +111,85 @@ export default function ScheduleMakerTool() {
       <section className="flight-hero">
         <div>
           <span className="section-kicker">SHIFT-AWARE GATE PLANNER</span>
-          <h2>Build a conflict-free daily schedule.</h2>
-          <p>Enter each aircraft’s arrival time. Departure defaults to one hour later, then the planner assigns an available employee whose complete shift covers the gate window.</p>
+          <h2>Assign arrivals and departures separately.</h2>
+          <p>Paste the team and flight lists, then enter only each arrival time. The planner creates distinct arrival and departure duties without shift overtime or overlapping work.</p>
         </div>
         <div className="schedule-summary">
           <span><strong>{schedule.length}</strong> planned</span>
           <span className={isPartial ? "is-pending" : ""}><strong>{pendingFlights.length}</strong> pending</span>
-          <span className={unassignedCount ? "has-warning" : ""}><strong>{unassignedCount}</strong> unassigned</span>
+          <span className={uncoveredDuties ? "has-warning" : ""}><strong>{uncoveredDuties}</strong> open duties</span>
         </div>
       </section>
 
       <div className="schedule-setup">
         <section className="panel schedule-input-panel">
           <div className="panel-heading">
-            <div>
-              <span className="step-number">01</span>
-              <div>
-                <h3>Team shifts</h3>
-                <p>Overnight and split shifts are supported.</p>
-              </div>
-            </div>
-            <button
-              className="text-button"
-              onClick={() => setStaff((current) => [...current, {
-                id: `staff-${Date.now()}`,
-                employee: "",
-                position: "CH",
-                start: "08:00",
-                end: "16:00",
-              }])}
-            >
-              <PlusIcon /> Add employee
-            </button>
+            <div><span className="step-number">01</span><div><h3>Team shifts</h3><p>Paste the three-column roster or edit rows below.</p></div></div>
+            <button className="text-button" onClick={() => void pasteFromClipboard("staff")}><PasteIcon /> Paste shifts</button>
+          </div>
+          <div className="bulk-paste">
+            <textarea
+              value={staffPaste}
+              placeholder={"Employee    Position    Shift\nName        CH          08:00-16:00"}
+              onChange={(event) => setStaffPaste(event.target.value)}
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData("text/plain");
+                window.setTimeout(() => applyStaffText(pasted), 0);
+              }}
+            />
+            <button disabled={!staffPaste.trim()} onClick={() => applyStaffText(staffPaste)}>Parse roster</button>
           </div>
           <div className="editable-table-wrap">
             <table className="editable-table staff-table">
               <thead><tr><th>Employee</th><th>Position</th><th>Shift</th><th /></tr></thead>
-              <tbody>
-                {staff.map((row) => (
-                  <tr key={row.id}>
-                    <td><input value={row.employee} onChange={(event) => updateStaff(row.id, "employee", event.target.value)} /></td>
-                    <td><input value={row.position} onChange={(event) => updateStaff(row.id, "position", event.target.value.toUpperCase())} /></td>
-                    <td>
-                      <div className="time-pair">
-                        <input type="time" value={row.start} onChange={(event) => updateStaff(row.id, "start", event.target.value)} />
-                        <span>–</span>
-                        <input type="time" value={row.end} onChange={(event) => updateStaff(row.id, "end", event.target.value)} />
-                      </div>
-                    </td>
-                    <td><button className="row-remove" aria-label={`Remove ${row.employee}`} onClick={() => setStaff((current) => current.filter((item) => item.id !== row.id))}>×</button></td>
-                  </tr>
-                ))}
-              </tbody>
+              <tbody>{staff.map((row) => (
+                <tr key={row.id}>
+                  <td><input value={row.employee} onChange={(event) => updateStaff(row.id, "employee", event.target.value)} /></td>
+                  <td><input value={row.position} onChange={(event) => updateStaff(row.id, "position", event.target.value.toUpperCase())} /></td>
+                  <td><div className="time-pair"><input type="time" value={row.start} onChange={(event) => updateStaff(row.id, "start", event.target.value)} /><span>–</span><input type="time" value={row.end} onChange={(event) => updateStaff(row.id, "end", event.target.value)} /></div></td>
+                  <td><button className="row-remove" aria-label={`Remove ${row.employee}`} onClick={() => setStaff((current) => current.filter((item) => item.id !== row.id))}>×</button></td>
+                </tr>
+              ))}</tbody>
             </table>
           </div>
+          <button className="table-add" onClick={() => setStaff((current) => [...current, { id: `staff-${Date.now()}`, employee: "", position: "CH", start: "08:00", end: "16:00" }])}><PlusIcon /> Add employee</button>
         </section>
 
         <section className="panel schedule-input-panel">
           <div className="panel-heading">
-            <div>
-              <span className="step-number">02</span>
-              <div>
-                <h3>Today’s flights</h3>
-                <p>STD fills automatically at arrival +60 minutes.</p>
-              </div>
-            </div>
-            <button className="text-button" onClick={addFlight}><PlusIcon /> Add flight</button>
+            <div><span className="step-number">02</span><div><h3>Today’s flights</h3><p>Paste Flight + Destination, then enter STA only.</p></div></div>
+            <button className="text-button" onClick={() => void pasteFromClipboard("flights")}><PasteIcon /> Paste flights</button>
+          </div>
+          <div className="bulk-paste">
+            <textarea
+              value={flightPaste}
+              placeholder={"FLT N    DEST\nLS450    LBA\nLS1630   STN"}
+              onChange={(event) => setFlightPaste(event.target.value)}
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData("text/plain");
+                window.setTimeout(() => applyFlightText(pasted), 0);
+              }}
+            />
+            <button disabled={!flightPaste.trim()} onClick={() => applyFlightText(flightPaste)}>Parse flights</button>
           </div>
           <div className="editable-table-wrap">
             <table className="editable-table flights-input-table">
-              <thead><tr><th>Flight</th><th>Arrival</th><th>Departure</th><th /></tr></thead>
-              <tbody>
-                {flights.map((row) => (
-                  <tr key={row.id}>
-                    <td><input value={row.flightNumber} onChange={(event) => updateFlight(row.id, "flightNumber", event.target.value.toUpperCase())} /></td>
-                    <td><input type="time" value={row.arrival} onChange={(event) => updateFlight(row.id, "arrival", event.target.value)} /></td>
-                    <td><input type="time" value={row.departure} onChange={(event) => updateFlight(row.id, "departure", event.target.value)} /></td>
-                    <td><button className="row-remove" aria-label={`Remove ${row.flightNumber}`} onClick={() => setFlights((current) => current.filter((item) => item.id !== row.id))}>×</button></td>
-                  </tr>
-                ))}
-              </tbody>
+              <thead><tr><th>Flight</th><th>Dest.</th><th>Arrival</th><th>STD (+60)</th><th /></tr></thead>
+              <tbody>{flights.map((row) => (
+                <tr key={row.id}>
+                  <td><input value={row.flightNumber} onChange={(event) => updateFlight(row.id, "flightNumber", event.target.value.toUpperCase())} /></td>
+                  <td><input value={row.destination} onChange={(event) => updateFlight(row.id, "destination", event.target.value.toUpperCase())} /></td>
+                  <td><input type="time" value={row.arrival} onChange={(event) => updateFlight(row.id, "arrival", event.target.value)} /></td>
+                  <td><input type="time" value={row.departure} onChange={(event) => updateFlight(row.id, "departure", event.target.value)} /></td>
+                  <td><button className="row-remove" aria-label={`Remove ${row.flightNumber}`} onClick={() => setFlights((current) => current.filter((item) => item.id !== row.id))}>×</button></td>
+                </tr>
+              ))}</tbody>
             </table>
           </div>
-          <div className="planner-rules">
+          <button className="table-add" onClick={() => setFlights((current) => [...current, { id: `flight-${Date.now()}`, flightNumber: "", destination: "", arrival: "", departure: "" }])}><PlusIcon /> Add flight</button>
+          <div className="planner-rules three-rules">
             <label>Arrival lead <span><input type="number" min="0" max="30" value={arrivalLead} onChange={(event) => setArrivalLead(Number(event.target.value))} /> min</span></label>
+            <label>Arrival service <span><input type="number" min="5" max="60" value={arrivalService} onChange={(event) => setArrivalService(Number(event.target.value))} /> min</span></label>
             <label>Departure lead <span><input type="number" min="0" max="60" value={departureLead} onChange={(event) => setDepartureLead(Number(event.target.value))} /> min</span></label>
           </div>
         </section>
@@ -180,85 +197,37 @@ export default function ScheduleMakerTool() {
 
       <section className="panel schedule-output">
         <div className="panel-heading">
-          <div>
-            <span className="step-number">03</span>
-              <div>
-                <h3>Recommended assignments</h3>
-                <p>{isPartial ? "Provisional schedule — available flights are assigned while missing times remain pending." : "Complete schedule — every flight has a usable time."}</p>
-              </div>
-            </div>
+          <div><span className="step-number">03</span><div><h3>Recommended assignments</h3><p>{isPartial ? "Partial program — known arrivals are scheduled while missing times stay pending." : "Complete program — all flights have arrival and departure coverage."}</p></div></div>
           <div className="schedule-actions">
-            <span className={`program-state ${isPartial ? "partial" : "complete"}`}>
-              <i /> {isPartial ? "Partial program" : "Complete program"}
-            </span>
-            <button className="primary-button" disabled={!schedule.length && !pendingFlights.length} onClick={() => void copySchedule()}>
-            <CopyIcon /> {copied ? "Copied" : "Copy schedule"}
-            </button>
+            <span className={`program-state ${isPartial ? "partial" : "complete"}`}><i /> {isPartial ? "Partial program" : "Complete program"}</span>
+            <button className="primary-button" disabled={!schedule.length && !pendingFlights.length} onClick={() => void copySchedule()}><CopyIcon /> {copied ? "Copied" : "Copy schedule"}</button>
           </div>
         </div>
-
-        {schedule.length || pendingFlights.length ? (
-          <div className="schedule-table-wrap">
-            <table className="schedule-table">
-              <thead>
-                <tr>
-                  <th>Flight</th>
-                  <th>STA</th>
-                  <th>STD</th>
-                  <th>Gate coverage</th>
-                  <th>Dep. prep</th>
-                  <th>Assigned employee</th>
-                  <th>Position</th>
-                  <th>Shift</th>
+        <div className="schedule-table-wrap">
+          <table className="schedule-table two-duty-table">
+            <thead><tr><th>Flight</th><th>Dest.</th><th>STA</th><th>STD</th><th>Arrival window</th><th>Arrival agent</th><th>Departure window</th><th>Departure agent</th></tr></thead>
+            <tbody>
+              {schedule.map((row) => (
+                <tr key={row.id} className={!row.arrivalDuty.employee || !row.departureDuty.employee ? "unassigned-row" : ""}>
+                  <td><strong>{row.flightNumber}</strong></td><td>{row.destination}</td><td>{row.arrival}</td><td>{row.departure}</td>
+                  <td>{minutesToTime(row.arrivalDuty.start)}–{minutesToTime(row.arrivalDuty.end)}</td>
+                  <td>{row.arrivalDuty.employee ? <span className="employee-chip"><i />{row.arrivalDuty.employee}<small>{row.arrivalDuty.position}</small></span> : <span className="unassigned-chip">No agent available</span>}</td>
+                  <td>{minutesToTime(row.departureDuty.start)}–{minutesToTime(row.departureDuty.end)}</td>
+                  <td>{row.departureDuty.employee ? <span className="employee-chip"><i />{row.departureDuty.employee}<small>{row.departureDuty.position}</small></span> : <span className="unassigned-chip">No agent available</span>}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {schedule.map((row) => (
-                  <tr key={row.id} className={!row.employee ? "unassigned-row" : ""}>
-                    <td><strong>{row.flightNumber}</strong></td>
-                    <td>{row.arrival}</td>
-                    <td>{row.departure}</td>
-                    <td>{minutesToTime(row.coverageStart)}–{minutesToTime(row.coverageEnd)}</td>
-                    <td>{minutesToTime(row.departurePrep)}</td>
-                    <td>
-                      {row.employee ? (
-                        <span className="employee-chip"><i />{row.employee}</span>
-                      ) : (
-                        <span className="unassigned-chip">No shift fits</span>
-                      )}
-                    </td>
-                    <td>{row.position ?? "—"}</td>
-                    <td>{row.shiftLabel ?? "—"}</td>
-                  </tr>
-                ))}
-                {pendingFlights.map((flight) => (
-                  <tr key={flight.id} className="pending-row">
-                    <td><strong>{flight.flightNumber || "Unnamed flight"}</strong></td>
-                    <td>{flight.arrival || "—"}</td>
-                    <td>{flight.departure || "—"}</td>
-                    <td colSpan={2}><span className="pending-chip">Awaiting arrival time</span></td>
-                    <td>Not scheduled yet</td>
-                    <td>—</td>
-                    <td>—</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="empty-sheet schedule-empty">
-            <span>⌚</span>
-            <strong>Add arrival times to generate the schedule</strong>
-            <small>{validFlightCount ? "Complete both times for each flight." : "Departure will default to one hour after arrival."}</small>
-          </div>
-        )}
+              ))}
+              {pendingFlights.map((flight) => (
+                <tr key={flight.id} className="pending-row">
+                  <td><strong>{flight.flightNumber || "Unnamed"}</strong></td><td>{flight.destination || "—"}</td><td>{flight.arrival || "—"}</td><td>{flight.departure || "—"}</td>
+                  <td colSpan={4}><span className="pending-chip">Awaiting arrival time</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div className="schedule-note">
-          <strong>{isPartial ? "Provisional program" : "Coverage rule"}</strong>
-          <span>
-            {isPartial
-              ? `${pendingFlights.length} flight${pendingFlights.length === 1 ? " is" : "s are"} waiting for time information. Current assignments may change when those times are added.`
-              : `An agent is reserved from ${arrivalLead} min before STA until STD; departure preparation begins ${departureLead} min before STD.`}
-          </span>
+          <strong>{isPartial ? "Provisional program" : "Duty rules"}</strong>
+          <span>{isPartial ? `${pendingFlights.length} flight${pendingFlights.length === 1 ? " is" : "s are"} waiting for an arrival time. Assignments recalculate as times are added.` : `Arrival duty runs from ${arrivalLead} min before STA until ${arrivalService} min after STA. Departure duty begins ${departureLead} min before STD.`}</span>
         </div>
       </section>
     </main>

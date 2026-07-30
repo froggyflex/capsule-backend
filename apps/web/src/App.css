@@ -353,6 +353,71 @@ textarea:focus-visible {
   box-shadow: inset 0 -2px #e3434e;
 }
 
+.bulk-paste {
+  padding: 11px 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  border-bottom: 1px solid #e8ebef;
+  background: #f8f9fb;
+}
+
+.bulk-paste textarea {
+  min-width: 0;
+  height: 58px;
+  padding: 8px 10px;
+  resize: vertical;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  outline: 0;
+  color: #3f4a5d;
+  background: #fff;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.bulk-paste textarea:focus {
+  border-color: #e3434e;
+  box-shadow: 0 0 0 3px rgba(227, 67, 78, 0.08);
+}
+
+.bulk-paste button,
+.table-add {
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  color: #596478;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bulk-paste button {
+  padding: 0 11px;
+}
+
+.bulk-paste button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.table-add {
+  margin: 10px 13px;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-add svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
 .staff-table th:nth-child(2),
 .staff-table td:nth-child(2) {
   width: 72px;
@@ -399,6 +464,10 @@ textarea:focus-visible {
   gap: 12px;
   border-top: 1px solid #e8ebef;
   background: #fafbfc;
+}
+
+.planner-rules.three-rules {
+  gap: 8px;
 }
 
 .planner-rules label {
@@ -471,6 +540,10 @@ textarea:focus-visible {
   min-width: 940px;
 }
 
+.schedule-table.two-duty-table {
+  min-width: 1080px;
+}
+
 .schedule-table td {
   padding: 12px 10px;
   border-bottom: 1px solid #edf0f3;
@@ -507,6 +580,13 @@ textarea:focus-visible {
   height: 6px;
   border-radius: 50%;
   background: #36b37e;
+}
+
+.employee-chip small {
+  padding-left: 3px;
+  color: inherit;
+  font-size: 8.5px;
+  opacity: 0.72;
 }
 
 .unassigned-chip {
@@ -1306,6 +1386,14 @@ textarea:focus-visible {
   .schedule-note {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .bulk-paste {
+    grid-template-columns: 1fr;
+  }
+
+  .bulk-paste button {
+    min-height: 34px;
   }
 
   .capsule-grid {
