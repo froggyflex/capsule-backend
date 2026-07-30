@@ -29,6 +29,7 @@ export type ScheduledFlight = ScheduleFlight & {
 
 type DutyTask = {
   id: string;
+  flightId: string;
   start: number;
   end: number;
 };
@@ -117,10 +118,20 @@ export function buildSchedule(
     .filter((item): item is { flight: ScheduleFlight; times: { arrival: number; departure: number } } => Boolean(item.times));
 
   const tasks: DutyTask[] = validFlights.flatMap(({ flight, times }) => [
-    { id: `${flight.id}-arrival`, start: times.arrival - arrivalLead, end: times.arrival + arrivalService },
-    { id: `${flight.id}-departure`, start: times.departure - departureLead, end: times.departure },
+    {
+      id: `${flight.id}-arrival`,
+      flightId: flight.id,
+      start: times.arrival - arrivalLead,
+      end: times.arrival + arrivalService,
+    },
+    {
+      id: `${flight.id}-departure`,
+      flightId: flight.id,
+      start: times.departure - departureLead,
+      end: times.departure,
+    },
   ]);
-  const employeeBookings = new Map<string, Array<{ start: number; end: number }>>();
+  const employeeBookings = new Map<string, Array<{ flightId: string; start: number; end: number }>>();
   const utilization = new Map<string, number>();
   const results = new Map<string, DutyAssignment>();
   const staffWindows = staff
@@ -135,8 +146,10 @@ export function buildSchedule(
       const eligible = staffWindows
         .filter(({ shift, window }) => {
           if (window.start > task.start || window.end < task.end) return false;
-          return !(employeeBookings.get(shift.employee) ?? []).some((booking) =>
-            overlap(task.start, task.end, booking.start, booking.end),
+          return !(employeeBookings.get(shift.employee) ?? []).some(
+            (booking) =>
+              booking.flightId === task.flightId ||
+              overlap(task.start, task.end, booking.start, booking.end),
           );
         })
         .sort((a, b) => {
@@ -154,7 +167,7 @@ export function buildSchedule(
       }
       employeeBookings.set(chosen.employee, [
         ...(employeeBookings.get(chosen.employee) ?? []),
-        { start: task.start, end: task.end },
+        { flightId: task.flightId, start: task.start, end: task.end },
       ]);
       utilization.set(chosen.employee, (utilization.get(chosen.employee) ?? 0) + task.end - task.start);
       results.set(task.id, {

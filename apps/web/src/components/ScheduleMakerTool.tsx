@@ -93,8 +93,8 @@ export default function ScheduleMakerTool() {
     setFlights((current) => current.map((row) => {
       if (row.id !== id) return row;
       if (field === "arrival") {
-        const useAutomaticDeparture = !row.departure || row.departure === addMinutes(row.arrival, 60);
-        return { ...row, arrival: value, departure: useAutomaticDeparture ? addMinutes(value, 60) : row.departure };
+        const useAutomaticDeparture = !row.departure || row.departure === addMinutes(row.arrival, 45);
+        return { ...row, arrival: value, departure: useAutomaticDeparture ? addMinutes(value, 45) : row.departure };
       }
       return { ...row, [field]: value };
     }));
@@ -112,7 +112,7 @@ export default function ScheduleMakerTool() {
         <div>
           <span className="section-kicker">SHIFT-AWARE GATE PLANNER</span>
           <h2>Assign arrivals and departures separately.</h2>
-          <p>Paste the team and flight lists, then enter only each arrival time. The planner creates distinct arrival and departure duties without shift overtime or overlapping work.</p>
+          <p>Paste the team and flight lists, then enter only each arrival time. STD defaults to 45 minutes later, and arrival and departure are always assigned to different employees.</p>
         </div>
         <div className="schedule-summary">
           <span><strong>{schedule.length}</strong> planned</span>
@@ -174,7 +174,7 @@ export default function ScheduleMakerTool() {
           </div>
           <div className="editable-table-wrap">
             <table className="editable-table flights-input-table">
-              <thead><tr><th>Flight</th><th>Dest.</th><th>Arrival</th><th>STD (+60)</th><th /></tr></thead>
+              <thead><tr><th>Flight</th><th>Dest.</th><th>Arrival</th><th>STD (+45)</th><th /></tr></thead>
               <tbody>{flights.map((row) => (
                 <tr key={row.id}>
                   <td><input value={row.flightNumber} onChange={(event) => updateFlight(row.id, "flightNumber", event.target.value.toUpperCase())} /></td>
