@@ -110,7 +110,7 @@ export function buildSchedule(
   staff: StaffShift[],
   flights: ScheduleFlight[],
   arrivalLead = 5,
-  arrivalService = 15,
+  arrivalService = 40,
   departureLead = 20,
 ): ScheduledFlight[] {
   const validFlights = flights

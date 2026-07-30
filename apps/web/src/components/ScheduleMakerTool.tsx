@@ -48,7 +48,7 @@ export default function ScheduleMakerTool() {
   const [staffPaste, setStaffPaste] = useState("");
   const [flightPaste, setFlightPaste] = useState("");
   const [arrivalLead, setArrivalLead] = useState(5);
-  const [arrivalService, setArrivalService] = useState(15);
+  const [arrivalService, setArrivalService] = useState(40);
   const [departureLead, setDepartureLead] = useState(20);
   const [copied, setCopied] = useState(false);
 
@@ -112,7 +112,7 @@ export default function ScheduleMakerTool() {
         <div>
           <span className="section-kicker">SHIFT-AWARE GATE PLANNER</span>
           <h2>Assign arrivals and departures separately.</h2>
-          <p>Paste the team and flight lists, then enter only each arrival time. STD defaults to 45 minutes later, and arrival and departure are always assigned to different employees.</p>
+          <p>Paste the team and flight lists, then enter only each arrival time. Arrival work reserves an agent for about 40 minutes, STD defaults to +45, and departure uses a different employee.</p>
         </div>
         <div className="schedule-summary">
           <span><strong>{schedule.length}</strong> planned</span>
