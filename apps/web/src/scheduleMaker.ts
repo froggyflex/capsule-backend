@@ -62,7 +62,7 @@ function overlap(startA: number, endA: number, startB: number, endB: number) {
 
 function positionRank(position: string) {
   const normalized = position.trim().toUpperCase();
-  if (normalized === "CH") return 0;
+  if (normalized === "CH" || normalized === "CSA") return 0;
   if (normalized === "SS") return 1;
   if (normalized === "DM") return 2;
   return 3;
@@ -109,7 +109,7 @@ export function parseFlightsText(text: string): ScheduleFlight[] {
 export function buildSchedule(
   staff: StaffShift[],
   flights: ScheduleFlight[],
-  arrivalLead = 5,
+  arrivalLead = 20,
   arrivalService = 40,
   departureLead = 20,
 ): ScheduledFlight[] {
@@ -127,11 +127,12 @@ export function buildSchedule(
     {
       id: `${flight.id}-departure`,
       flightId: flight.id,
-      start: times.departure - departureLead,
+      start: times.arrival - departureLead,
       end: times.departure,
     },
   ]);
   const employeeBookings = new Map<string, Array<{ flightId: string; start: number; end: number }>>();
+  const dutyCount = new Map<string, number>();
   const utilization = new Map<string, number>();
   const results = new Map<string, DutyAssignment>();
   const staffWindows = staff
@@ -155,6 +156,9 @@ export function buildSchedule(
         .sort((a, b) => {
           const rankDifference = positionRank(a.shift.position) - positionRank(b.shift.position);
           if (rankDifference) return rankDifference;
+          const countDifference =
+            (dutyCount.get(a.shift.employee) ?? 0) - (dutyCount.get(b.shift.employee) ?? 0);
+          if (countDifference) return countDifference;
           const loadDifference =
             (utilization.get(a.shift.employee) ?? 0) - (utilization.get(b.shift.employee) ?? 0);
           if (loadDifference) return loadDifference;
@@ -169,6 +173,7 @@ export function buildSchedule(
         ...(employeeBookings.get(chosen.employee) ?? []),
         { flightId: task.flightId, start: task.start, end: task.end },
       ]);
+      dutyCount.set(chosen.employee, (dutyCount.get(chosen.employee) ?? 0) + 1);
       utilization.set(chosen.employee, (utilization.get(chosen.employee) ?? 0) + task.end - task.start);
       results.set(task.id, {
         employee: chosen.employee,
@@ -184,7 +189,7 @@ export function buildSchedule(
     .map(({ flight, times }) => ({
       ...flight,
       arrivalDuty: results.get(`${flight.id}-arrival`) ?? emptyAssignment(times.arrival - arrivalLead, times.arrival + arrivalService),
-      departureDuty: results.get(`${flight.id}-departure`) ?? emptyAssignment(times.departure - departureLead, times.departure),
+      departureDuty: results.get(`${flight.id}-departure`) ?? emptyAssignment(times.arrival - departureLead, times.departure),
     }));
 }
 

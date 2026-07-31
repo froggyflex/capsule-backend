@@ -47,7 +47,7 @@ export default function ScheduleMakerTool() {
   const [flights, setFlights] = useState<ScheduleFlight[]>(() => parseFlightsText(initialFlightsText));
   const [staffPaste, setStaffPaste] = useState("");
   const [flightPaste, setFlightPaste] = useState("");
-  const [arrivalLead, setArrivalLead] = useState(5);
+  const [arrivalLead, setArrivalLead] = useState(20);
   const [arrivalService, setArrivalService] = useState(40);
   const [departureLead, setDepartureLead] = useState(20);
   const [copied, setCopied] = useState(false);
@@ -112,7 +112,7 @@ export default function ScheduleMakerTool() {
         <div>
           <span className="section-kicker">SHIFT-AWARE GATE PLANNER</span>
           <h2>Assign arrivals and departures separately.</h2>
-          <p>Paste the team and flight lists, then enter only each arrival time. Arrival work reserves an agent for about 40 minutes, STD defaults to +45, and departure uses a different employee.</p>
+          <p>Both agents must be on shift before STA. CSA/CH duties are shared fairly, STD defaults to +45 minutes, and supervisors are used only when the CSA tier cannot cover the work.</p>
         </div>
         <div className="schedule-summary">
           <span><strong>{schedule.length}</strong> planned</span>
@@ -190,7 +190,7 @@ export default function ScheduleMakerTool() {
           <div className="planner-rules three-rules">
             <label>Arrival lead <span><input type="number" min="0" max="30" value={arrivalLead} onChange={(event) => setArrivalLead(Number(event.target.value))} /> min</span></label>
             <label>Arrival service <span><input type="number" min="5" max="60" value={arrivalService} onChange={(event) => setArrivalService(Number(event.target.value))} /> min</span></label>
-            <label>Departure lead <span><input type="number" min="0" max="60" value={departureLead} onChange={(event) => setDepartureLead(Number(event.target.value))} /> min</span></label>
+            <label>Gate lead before STA <span><input type="number" min="0" max="60" value={departureLead} onChange={(event) => setDepartureLead(Number(event.target.value))} /> min</span></label>
           </div>
         </section>
       </div>
@@ -227,7 +227,7 @@ export default function ScheduleMakerTool() {
         </div>
         <div className="schedule-note">
           <strong>{isPartial ? "Provisional program" : "Duty rules"}</strong>
-          <span>{isPartial ? `${pendingFlights.length} flight${pendingFlights.length === 1 ? " is" : "s are"} waiting for an arrival time. Assignments recalculate as times are added.` : `Arrival duty runs from ${arrivalLead} min before STA until ${arrivalService} min after STA. Departure duty begins ${departureLead} min before STD.`}</span>
+          <span>{isPartial ? `${pendingFlights.length} flight${pendingFlights.length === 1 ? " is" : "s are"} waiting for an arrival time. Assignments recalculate as times are added.` : `Arrival duty runs from ${arrivalLead} min before STA until ${arrivalService} min after STA. Departure/gate duty runs from ${departureLead} min before STA until STD.`}</span>
         </div>
       </section>
     </main>
