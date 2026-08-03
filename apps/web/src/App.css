@@ -461,6 +461,7 @@ textarea:focus-visible {
 .planner-rules {
   padding: 12px 15px;
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   border-top: 1px solid #e8ebef;
   background: #fafbfc;
@@ -471,7 +472,7 @@ textarea:focus-visible {
 }
 
 .planner-rules label {
-  flex: 1;
+  flex: 1 1 145px;
   display: flex;
   align-items: center;
   justify-content: space-between;

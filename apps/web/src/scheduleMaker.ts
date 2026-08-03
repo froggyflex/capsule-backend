@@ -30,9 +30,13 @@ export type ScheduledFlight = ScheduleFlight & {
 type DutyTask = {
   id: string;
   flightId: string;
+  kind: "arrival" | "departure";
+  eventTime: number;
   start: number;
   end: number;
 };
+
+type EmployeeBooking = DutyTask;
 
 function timeToMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
@@ -112,6 +116,8 @@ export function buildSchedule(
   arrivalLead = 20,
   arrivalService = 40,
   departureLead = 20,
+  arrivalBatchGap = 25,
+  maxArrivalBatch = 3,
 ): ScheduledFlight[] {
   const validFlights = flights
     .map((flight) => ({ flight, times: normalizedFlightTimes(flight) }))
@@ -121,41 +127,78 @@ export function buildSchedule(
     {
       id: `${flight.id}-arrival`,
       flightId: flight.id,
+      kind: "arrival",
+      eventTime: times.arrival,
       start: times.arrival - arrivalLead,
       end: times.arrival + arrivalService,
     },
     {
       id: `${flight.id}-departure`,
       flightId: flight.id,
+      kind: "departure",
+      eventTime: times.departure,
       start: times.arrival - departureLead,
       end: times.departure,
     },
   ]);
-  const employeeBookings = new Map<string, Array<{ flightId: string; start: number; end: number }>>();
+  const employeeBookings = new Map<string, EmployeeBooking[]>();
   const dutyCount = new Map<string, number>();
   const utilization = new Map<string, number>();
   const results = new Map<string, DutyAssignment>();
   const staffWindows = staff
     .map((shift) => ({ shift, window: normalizedWindow(shift.start, shift.end) }))
     .filter((item): item is { shift: StaffShift; window: { start: number; end: number } } => Boolean(item.window));
-  const candidateCount = (task: DutyTask) =>
-    staffWindows.filter(({ window }) => window.start <= task.start && window.end >= task.end).length;
+
+  const batchAffinity = (employee: string, task: DutyTask) => {
+    const bookings = employeeBookings.get(employee) ?? [];
+    if (bookings.some((booking) => booking.flightId === task.flightId)) return null;
+    const overlappingBookings = bookings.filter((booking) =>
+      overlap(task.start, task.end, booking.start, booking.end),
+    );
+    if (task.kind === "departure") return overlappingBookings.length ? null : 0;
+    if (overlappingBookings.some((booking) => booking.kind === "departure")) return null;
+
+    const arrivalBookings = bookings.filter((booking) => booking.kind === "arrival");
+    const connected = new Set<EmployeeBooking>();
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const booking of arrivalBookings) {
+        if (connected.has(booking)) continue;
+        const connectsToTask = Math.abs(booking.eventTime - task.eventTime) <= arrivalBatchGap;
+        const connectsToBatch = Array.from(connected).some(
+          (member) => Math.abs(booking.eventTime - member.eventTime) <= arrivalBatchGap,
+        );
+        if (connectsToTask || connectsToBatch) {
+          connected.add(booking);
+          changed = true;
+        }
+      }
+    }
+    if (connected.size + 1 > maxArrivalBatch) return null;
+    if (overlappingBookings.some((booking) => booking.kind === "arrival" && !connected.has(booking))) {
+      return null;
+    }
+    return connected.size;
+  };
 
   tasks
-    .sort((a, b) => candidateCount(a) - candidateCount(b) || a.start - b.start)
+    .sort((a, b) =>
+      a.start - b.start ||
+      (a.kind === b.kind ? 0 : a.kind === "arrival" ? -1 : 1),
+    )
     .forEach((task) => {
       const eligible = staffWindows
-        .filter(({ shift, window }) => {
+        .map(({ shift, window }) => {
           if (window.start > task.start || window.end < task.end) return false;
-          return !(employeeBookings.get(shift.employee) ?? []).some(
-            (booking) =>
-              booking.flightId === task.flightId ||
-              overlap(task.start, task.end, booking.start, booking.end),
-          );
+          const affinity = batchAffinity(shift.employee, task);
+          return affinity === null ? false : { shift, window, affinity };
         })
+        .filter((item): item is { shift: StaffShift; window: { start: number; end: number }; affinity: number } => Boolean(item))
         .sort((a, b) => {
           const rankDifference = positionRank(a.shift.position) - positionRank(b.shift.position);
           if (rankDifference) return rankDifference;
+          if (task.kind === "arrival" && a.affinity !== b.affinity) return b.affinity - a.affinity;
           const countDifference =
             (dutyCount.get(a.shift.employee) ?? 0) - (dutyCount.get(b.shift.employee) ?? 0);
           if (countDifference) return countDifference;
@@ -171,7 +214,7 @@ export function buildSchedule(
       }
       employeeBookings.set(chosen.employee, [
         ...(employeeBookings.get(chosen.employee) ?? []),
-        { flightId: task.flightId, start: task.start, end: task.end },
+        task,
       ]);
       dutyCount.set(chosen.employee, (dutyCount.get(chosen.employee) ?? 0) + 1);
       utilization.set(chosen.employee, (utilization.get(chosen.employee) ?? 0) + task.end - task.start);

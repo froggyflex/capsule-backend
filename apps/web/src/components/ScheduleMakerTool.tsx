@@ -50,11 +50,13 @@ export default function ScheduleMakerTool() {
   const [arrivalLead, setArrivalLead] = useState(20);
   const [arrivalService, setArrivalService] = useState(40);
   const [departureLead, setDepartureLead] = useState(20);
+  const [arrivalBatchGap, setArrivalBatchGap] = useState(25);
+  const [maxArrivalBatch, setMaxArrivalBatch] = useState(3);
   const [copied, setCopied] = useState(false);
 
   const schedule = useMemo(
-    () => buildSchedule(staff, flights, arrivalLead, arrivalService, departureLead),
-    [staff, flights, arrivalLead, arrivalService, departureLead],
+    () => buildSchedule(staff, flights, arrivalLead, arrivalService, departureLead, arrivalBatchGap, maxArrivalBatch),
+    [staff, flights, arrivalLead, arrivalService, departureLead, arrivalBatchGap, maxArrivalBatch],
   );
   const pendingFlights = flights.filter((flight) => !flight.arrival || !flight.departure);
   const isPartial = pendingFlights.length > 0;
@@ -112,7 +114,7 @@ export default function ScheduleMakerTool() {
         <div>
           <span className="section-kicker">SHIFT-AWARE GATE PLANNER</span>
           <h2>Assign arrivals and departures separately.</h2>
-          <p>Both agents must be on shift before STA. CSA/CH duties are shared fairly, STD defaults to +45 minutes, and supervisors are used only when the CSA tier cannot cover the work.</p>
+          <p>Nearby arrivals can be grouped under one agent, up to the configured limit. CSA/CH duties stay balanced, STD defaults to +45 minutes, and supervisors remain the backup tier.</p>
         </div>
         <div className="schedule-summary">
           <span><strong>{schedule.length}</strong> planned</span>
@@ -191,6 +193,8 @@ export default function ScheduleMakerTool() {
             <label>Arrival lead <span><input type="number" min="0" max="30" value={arrivalLead} onChange={(event) => setArrivalLead(Number(event.target.value))} /> min</span></label>
             <label>Arrival service <span><input type="number" min="5" max="60" value={arrivalService} onChange={(event) => setArrivalService(Number(event.target.value))} /> min</span></label>
             <label>Gate lead before STA <span><input type="number" min="0" max="60" value={departureLead} onChange={(event) => setDepartureLead(Number(event.target.value))} /> min</span></label>
+            <label>Arrival batch gap <span><input type="number" min="5" max="60" value={arrivalBatchGap} onChange={(event) => setArrivalBatchGap(Number(event.target.value))} /> min</span></label>
+            <label>Max arrivals/agent <span><input type="number" min="1" max="5" value={maxArrivalBatch} onChange={(event) => setMaxArrivalBatch(Number(event.target.value))} /></span></label>
           </div>
         </section>
       </div>
