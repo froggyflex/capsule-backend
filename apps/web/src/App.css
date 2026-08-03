@@ -402,6 +402,13 @@ textarea:focus-visible {
   cursor: not-allowed;
 }
 
+.parse-feedback {
+  grid-column: 1 / -1;
+  color: #657084;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+
 .table-add {
   margin: 10px 13px;
   padding: 7px 10px;
@@ -574,6 +581,42 @@ textarea:focus-visible {
 .employee-chip {
   color: #267a5a;
   background: #ebf8f2;
+}
+
+.employee-chip.shortage {
+  color: #93601d;
+  background: #fff1d9;
+}
+
+.employee-chip.shortage i {
+  background: #e5a33e;
+}
+
+.assignment-cell {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assignment-warning {
+  color: #9a661e;
+  font-size: 8.5px;
+}
+
+.coverage-alert {
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f0d3a8;
+  color: #80561c;
+  background: #fff8eb;
+  font-size: 10px;
+}
+
+.coverage-alert strong {
+  white-space: nowrap;
 }
 
 .employee-chip i {

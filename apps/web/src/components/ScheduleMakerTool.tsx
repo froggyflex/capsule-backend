@@ -47,16 +47,18 @@ export default function ScheduleMakerTool() {
   const [flights, setFlights] = useState<ScheduleFlight[]>(() => parseFlightsText(initialFlightsText));
   const [staffPaste, setStaffPaste] = useState("");
   const [flightPaste, setFlightPaste] = useState("");
+  const [flightParseMessage, setFlightParseMessage] = useState("");
   const [arrivalLead, setArrivalLead] = useState(20);
   const [arrivalService, setArrivalService] = useState(40);
   const [departureLead, setDepartureLead] = useState(20);
   const [arrivalBatchGap, setArrivalBatchGap] = useState(25);
   const [maxArrivalBatch, setMaxArrivalBatch] = useState(3);
+  const [fuelingRelease, setFuelingRelease] = useState(20);
   const [copied, setCopied] = useState(false);
 
   const schedule = useMemo(
-    () => buildSchedule(staff, flights, arrivalLead, arrivalService, departureLead, arrivalBatchGap, maxArrivalBatch),
-    [staff, flights, arrivalLead, arrivalService, departureLead, arrivalBatchGap, maxArrivalBatch],
+    () => buildSchedule(staff, flights, arrivalLead, arrivalService, departureLead, arrivalBatchGap, maxArrivalBatch, fuelingRelease),
+    [staff, flights, arrivalLead, arrivalService, departureLead, arrivalBatchGap, maxArrivalBatch, fuelingRelease],
   );
   const pendingFlights = flights.filter((flight) => !flight.arrival || !flight.departure);
   const isPartial = pendingFlights.length > 0;
@@ -64,6 +66,7 @@ export default function ScheduleMakerTool() {
     (count, row) => count + Number(!row.arrivalDuty.employee) + Number(!row.departureDuty.employee),
     0,
   );
+  const shortageCovers = schedule.filter((row) => row.departureDuty.shortageCover);
 
   const applyStaffText = (text: string) => {
     const parsed = parseStaffText(text);
@@ -78,13 +81,20 @@ export default function ScheduleMakerTool() {
     if (parsed.length) {
       setFlights(parsed);
       setFlightPaste("");
+      setFlightParseMessage(`${parsed.length} flight${parsed.length === 1 ? "" : "s"} imported`);
+    } else {
+      setFlightParseMessage("No LS flight numbers found — keep the LS number in the copied text.");
     }
   };
 
   const pasteFromClipboard = async (kind: "staff" | "flights") => {
-    const text = await navigator.clipboard.readText();
-    if (kind === "staff") applyStaffText(text);
-    else applyFlightText(text);
+    try {
+      const text = await navigator.clipboard.readText();
+      if (kind === "staff") applyStaffText(text);
+      else applyFlightText(text);
+    } catch {
+      if (kind === "flights") setFlightParseMessage("Clipboard access was blocked — paste into the box instead.");
+    }
   };
 
   const updateStaff = (id: string, field: keyof StaffShift, value: string) => {
@@ -169,10 +179,12 @@ export default function ScheduleMakerTool() {
               onChange={(event) => setFlightPaste(event.target.value)}
               onPaste={(event) => {
                 const pasted = event.clipboardData.getData("text/plain");
-                window.setTimeout(() => applyFlightText(pasted), 0);
+                event.preventDefault();
+                applyFlightText(pasted);
               }}
             />
             <button disabled={!flightPaste.trim()} onClick={() => applyFlightText(flightPaste)}>Parse flights</button>
+            {flightParseMessage && <span className="parse-feedback">{flightParseMessage}</span>}
           </div>
           <div className="editable-table-wrap">
             <table className="editable-table flights-input-table">
@@ -195,6 +207,7 @@ export default function ScheduleMakerTool() {
             <label>Gate lead before STA <span><input type="number" min="0" max="60" value={departureLead} onChange={(event) => setDepartureLead(Number(event.target.value))} /> min</span></label>
             <label>Arrival batch gap <span><input type="number" min="5" max="60" value={arrivalBatchGap} onChange={(event) => setArrivalBatchGap(Number(event.target.value))} /> min</span></label>
             <label>Max arrivals/agent <span><input type="number" min="1" max="5" value={maxArrivalBatch} onChange={(event) => setMaxArrivalBatch(Number(event.target.value))} /></span></label>
+            <label>Fueling release <span><input type="number" min="5" max="45" value={fuelingRelease} onChange={(event) => setFuelingRelease(Number(event.target.value))} /> min</span></label>
           </div>
         </section>
       </div>
@@ -207,6 +220,12 @@ export default function ScheduleMakerTool() {
             <button className="primary-button" disabled={!schedule.length && !pendingFlights.length} onClick={() => void copySchedule()}><CopyIcon /> {copied ? "Copied" : "Copy schedule"}</button>
           </div>
         </div>
+        {shortageCovers.length > 0 && (
+          <div className="coverage-alert" role="status">
+            <strong>{shortageCovers.length} shortage-cover assignment{shortageCovers.length === 1 ? "" : "s"}</strong>
+            <span>These reuse an agent from an earlier gate after STA +{fuelingRelease} min. Confirm fueling is complete before moving the agent.</span>
+          </div>
+        )}
         <div className="schedule-table-wrap">
           <table className="schedule-table two-duty-table">
             <thead><tr><th>Flight</th><th>Dest.</th><th>STA</th><th>STD</th><th>Arrival window</th><th>Arrival agent</th><th>Departure window</th><th>Departure agent</th></tr></thead>
@@ -217,7 +236,7 @@ export default function ScheduleMakerTool() {
                   <td>{minutesToTime(row.arrivalDuty.start)}–{minutesToTime(row.arrivalDuty.end)}</td>
                   <td>{row.arrivalDuty.employee ? <span className="employee-chip"><i />{row.arrivalDuty.employee}<small>{row.arrivalDuty.position}</small></span> : <span className="unassigned-chip">No agent available</span>}</td>
                   <td>{minutesToTime(row.departureDuty.start)}–{minutesToTime(row.departureDuty.end)}</td>
-                  <td>{row.departureDuty.employee ? <span className="employee-chip"><i />{row.departureDuty.employee}<small>{row.departureDuty.position}</small></span> : <span className="unassigned-chip">No agent available</span>}</td>
+                  <td>{row.departureDuty.employee ? <div className="assignment-cell"><span className={`employee-chip ${row.departureDuty.shortageCover ? "shortage" : ""}`}><i />{row.departureDuty.employee}<small>{row.departureDuty.position}</small></span>{row.departureDuty.shortageCover && <small className="assignment-warning">Confirm earlier fueling complete</small>}</div> : <span className="unassigned-chip">No agent available</span>}</td>
                 </tr>
               ))}
               {pendingFlights.map((flight) => (

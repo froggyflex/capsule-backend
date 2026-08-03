@@ -20,6 +20,8 @@ export type DutyAssignment = {
   shiftLabel: string | null;
   start: number;
   end: number;
+  shortageCover: boolean;
+  operatorNote: string | null;
 };
 
 export type ScheduledFlight = ScheduleFlight & {
@@ -32,6 +34,7 @@ type DutyTask = {
   flightId: string;
   kind: "arrival" | "departure";
   eventTime: number;
+  fallbackRelease: number;
   start: number;
   end: number;
 };
@@ -73,7 +76,15 @@ function positionRank(position: string) {
 }
 
 function emptyAssignment(start: number, end: number): DutyAssignment {
-  return { employee: null, position: null, shiftLabel: null, start, end };
+  return {
+    employee: null,
+    position: null,
+    shiftLabel: null,
+    start,
+    end,
+    shortageCover: false,
+    operatorNote: null,
+  };
 }
 
 export function parseStaffText(text: string): StaffShift[] {
@@ -94,15 +105,24 @@ export function parseStaffText(text: string): StaffShift[] {
 }
 
 export function parseFlightsText(text: string): ScheduleFlight[] {
+  const normalized = text
+    .normalize("NFKC")
+    .replace(/[\u00a0\u2007\u202f]/g, " ")
+    .replace(/[\u200b-\u200d\ufeff]/g, "")
+    .replace(/\r\n?/g, "\n");
+  const flightPattern = /\bLS[\s-]*\d{1,5}[A-Z]?\b/gi;
+  const matches = Array.from(normalized.matchAll(flightPattern));
   const rows: ScheduleFlight[] = [];
-  for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.replace(/\t+/g, " ").replace(/\s+/g, " ").trim();
-    const match = line.match(/\b(LS\s*\d{2,5}[A-Z]?)\s+([A-Z]{3})\b/i);
-    if (!match) continue;
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const segmentStart = (match.index ?? 0) + match[0].length;
+    const segmentEnd = matches[index + 1]?.index ?? normalized.length;
+    const segment = normalized.slice(segmentStart, segmentEnd);
+    const destination = segment.match(/(?:^|[\t ,;|])([A-Z]{3})(?=$|[\t ,;|\n])/i)?.[1] ?? "";
     rows.push({
-      id: `flight-${Date.now()}-${rows.length}`,
-      flightNumber: match[1].replace(/\s+/g, "").toUpperCase(),
-      destination: match[2].toUpperCase(),
+      id: `flight-${Date.now()}-${index}`,
+      flightNumber: match[0].replace(/[\s-]+/g, "").toUpperCase(),
+      destination: destination.toUpperCase(),
       arrival: "",
       departure: "",
     });
@@ -118,6 +138,7 @@ export function buildSchedule(
   departureLead = 20,
   arrivalBatchGap = 25,
   maxArrivalBatch = 3,
+  fuelingRelease = 20,
 ): ScheduledFlight[] {
   const validFlights = flights
     .map((flight) => ({ flight, times: normalizedFlightTimes(flight) }))
@@ -129,6 +150,7 @@ export function buildSchedule(
       flightId: flight.id,
       kind: "arrival",
       eventTime: times.arrival,
+      fallbackRelease: times.arrival + arrivalService,
       start: times.arrival - arrivalLead,
       end: times.arrival + arrivalService,
     },
@@ -136,7 +158,8 @@ export function buildSchedule(
       id: `${flight.id}-departure`,
       flightId: flight.id,
       kind: "departure",
-      eventTime: times.departure,
+      eventTime: times.arrival,
+      fallbackRelease: times.arrival + fuelingRelease,
       start: times.arrival - departureLead,
       end: times.departure,
     },
@@ -188,14 +211,8 @@ export function buildSchedule(
       (a.kind === b.kind ? 0 : a.kind === "arrival" ? -1 : 1),
     )
     .forEach((task) => {
-      const eligible = staffWindows
-        .map(({ shift, window }) => {
-          if (window.start > task.start || window.end < task.end) return false;
-          const affinity = batchAffinity(shift.employee, task);
-          return affinity === null ? false : { shift, window, affinity };
-        })
-        .filter((item): item is { shift: StaffShift; window: { start: number; end: number }; affinity: number } => Boolean(item))
-        .sort((a, b) => {
+      const sortCandidates = <T extends { shift: StaffShift; window: { start: number; end: number }; affinity: number }>(candidates: T[]) =>
+        candidates.sort((a, b) => {
           const rankDifference = positionRank(a.shift.position) - positionRank(b.shift.position);
           if (rankDifference) return rankDifference;
           if (task.kind === "arrival" && a.affinity !== b.affinity) return b.affinity - a.affinity;
@@ -207,7 +224,37 @@ export function buildSchedule(
           if (loadDifference) return loadDifference;
           return a.window.end - b.window.end;
         });
-      const chosen = eligible[0]?.shift;
+
+      const strictCandidates = staffWindows
+        .map(({ shift, window }) => {
+          if (window.start > task.start || window.end < task.end) return false;
+          const affinity = batchAffinity(shift.employee, task);
+          return affinity === null ? false : { shift, window, affinity };
+        })
+        .filter((item): item is { shift: StaffShift; window: { start: number; end: number }; affinity: number } => Boolean(item));
+      const strict = sortCandidates(strictCandidates)[0];
+
+      const shortageCandidates = !strict && task.kind === "departure"
+        ? staffWindows
+            .map(({ shift, window }) => {
+              if (window.start > task.start || window.end < task.end) return false;
+              const bookings = employeeBookings.get(shift.employee) ?? [];
+              if (bookings.some((booking) => booking.flightId === task.flightId)) return false;
+              const conflicts = bookings.filter((booking) =>
+                overlap(task.start, task.end, booking.start, booking.end),
+              );
+              const canReleaseFromEarlierGates =
+                conflicts.length > 0 &&
+                conflicts.every(
+                  (booking) => booking.kind === "departure" && booking.fallbackRelease <= task.start,
+                );
+              return canReleaseFromEarlierGates ? { shift, window, affinity: 0 } : false;
+            })
+            .filter((item): item is { shift: StaffShift; window: { start: number; end: number }; affinity: number } => Boolean(item))
+        : [];
+      const shortage = sortCandidates(shortageCandidates)[0];
+      const selected = strict ?? shortage;
+      const chosen = selected?.shift;
       if (!chosen) {
         results.set(task.id, emptyAssignment(task.start, task.end));
         return;
@@ -224,6 +271,10 @@ export function buildSchedule(
         shiftLabel: `${chosen.start}–${chosen.end}`,
         start: task.start,
         end: task.end,
+        shortageCover: Boolean(shortage && !strict),
+        operatorNote: shortage && !strict
+          ? `Shortage cover: confirm the earlier aircraft has completed fueling before reassigning ${chosen.employee}.`
+          : null,
       });
     });
 
@@ -248,11 +299,13 @@ export function addMinutes(time: string, minutes: number) {
 
 export function scheduleToTsv(rows: ScheduledFlight[], pendingFlights: ScheduleFlight[] = []) {
   return [
-    ["Flight", "Destination", "Status", "STA", "STD", "Arrival duty", "Arrival agent", "Position", "Departure duty", "Departure agent", "Position"].join("\t"),
+    ["Flight", "Destination", "Status", "STA", "STD", "Arrival duty", "Arrival agent", "Position", "Departure duty", "Departure agent", "Position", "Operator note"].join("\t"),
     ...rows.map((row) => [
       row.flightNumber,
       row.destination,
-      row.arrivalDuty.employee && row.departureDuty.employee ? "Scheduled" : "Needs coverage",
+      row.departureDuty.shortageCover
+        ? "Shortage cover — confirm fueling"
+        : row.arrivalDuty.employee && row.departureDuty.employee ? "Scheduled" : "Needs coverage",
       row.arrival,
       row.departure,
       `${minutesToTime(row.arrivalDuty.start)}-${minutesToTime(row.arrivalDuty.end)}`,
@@ -261,10 +314,11 @@ export function scheduleToTsv(rows: ScheduledFlight[], pendingFlights: ScheduleF
       `${minutesToTime(row.departureDuty.start)}-${minutesToTime(row.departureDuty.end)}`,
       row.departureDuty.employee ?? "UNASSIGNED",
       row.departureDuty.position ?? "",
+      row.departureDuty.operatorNote ?? "",
     ].join("\t")),
     ...pendingFlights.map((flight) => [
       flight.flightNumber, flight.destination, "Awaiting arrival", flight.arrival, flight.departure,
-      "", "", "", "", "", "",
+      "", "", "", "", "", "", "",
     ].join("\t")),
   ].join("\n");
 }
